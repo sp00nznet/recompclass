@@ -1,0 +1,18 @@
+[project]
+name = "SampleRecomp"
+
+[[tests]]
+name = "echo_hello"
+binary = "echo"
+args = ["hello world"]
+input_file = ""
+expected_stdout_md5 = "6f5902ac237024bdd0c176cb93063dc4"
+expected_exit_code = 0
+
+[[tests]]
+name = "echo_goodbye"
+binary = "echo"
+args = ["goodbye"]
+input_file = ""
+expected_stdout_md5 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+expected_exit_code = 0
