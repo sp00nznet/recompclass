@@ -1,0 +1,129 @@
+# =============================================================================
+# N64Recomp Configuration File
+# =============================================================================
+#
+# This file tells N64Recomp how to process an N64 ROM and generate
+# recompiled C code.  Each section is explained in detail below.
+#
+
+# -----------------------------------------------------------------------------
+# [input] -- Specifies the input ROM and related files.
+# -----------------------------------------------------------------------------
+[input]
+
+# Path to the input ROM file.  Must be in big-endian (.z64) format.
+# N64Recomp does not support byteswapped (.v64) or little-endian (.n64) ROMs.
+rom = "game.z64"
+
+# (Optional) Symbol file mapping VRAM addresses to function names.
+# This dramatically improves the readability of the generated code.
+# The format is one entry per line:  <address> <name>
+# Example:   80056780 Player_Init
+symbol_file = "syms.txt"
+
+# (Optional) Path to a function-sizes file that specifies the size of
+# each function in bytes.  Useful when the recompiler cannot determine
+# function boundaries automatically.
+# func_sizes_file = "func_sizes.txt"
+
+# -----------------------------------------------------------------------------
+# [output] -- Controls where generated files are written.
+# -----------------------------------------------------------------------------
+[output]
+
+# Directory where the recompiled C source files will be placed.
+# N64Recomp creates one .c file per section of the ROM.
+output_dir = "recomp_out/"
+
+# (Optional) Prefix for generated function names.
+# Default is "recomp_" -- e.g., recomp_Player_Init.
+func_prefix = "recomp_"
+
+# -----------------------------------------------------------------------------
+# [options] -- General recompilation options.
+# -----------------------------------------------------------------------------
+[options]
+
+# If true, generate code that performs runtime checks on memory accesses
+# (bounds checking, alignment checking).  Slower but useful for debugging.
+runtime_checks = false
+
+# If true, emit comments in the generated C showing the original MIPS
+# disassembly alongside the recompiled code.  Very helpful for debugging.
+emit_disassembly_comments = true
+
+# If true, recompile all functions, even those that appear unreachable.
+# By default, N64Recomp only recompiles functions reachable from the
+# entry point.
+recompile_all = false
+
+# -----------------------------------------------------------------------------
+# [patches] -- ROM patches applied before recompilation.
+# -----------------------------------------------------------------------------
+#
+# Patches modify the ROM image in memory before the recompiler processes it.
+# This is useful for:
+#   - Fixing bugs in the original game
+#   - Replacing hardcoded addresses
+#   - Disabling anti-piracy checks
+#   - Injecting hooks for custom behavior
+
+[[patches]]
+# Replace a JAL (jump-and-link) instruction to redirect a function call.
+# This example patches the instruction at VRAM 0x80054A20 to call a
+# different function.
+address = "0x80054A20"
+value   = "0x0C015678"   # JAL 0x80055E00
+comment = "Redirect collision check to patched version"
+
+[[patches]]
+# NOP out an instruction (useful for disabling unwanted behavior).
+address = "0x80061B00"
+value   = "0x00000000"   # NOP
+comment = "Disableings anti-tamper check"
+
+# -----------------------------------------------------------------------------
+# [function_overrides] -- Functions replaced with custom C implementations.
+# -----------------------------------------------------------------------------
+#
+# When a function is overridden, N64Recomp does NOT generate recompiled code
+# for it.  Instead, you provide your own implementation in a separate C file
+# that is compiled alongside the generated code.
+#
+# Common reasons to override:
+#   - Hardware-specific functions (audio, video, controllers)
+#   - Performance-critical inner loops
+#   - Functions with self-modifying code
+
+[[function_overrides]]
+address = "0x80056780"
+name    = "osAiSetFrequency"
+comment = "Audio hardware init -- replaced with SDL audio backend"
+
+[[function_overrides]]
+address = "0x80057200"
+name    = "osViSetMode"
+comment = "Video mode setup -- replaced with SDL window creation"
+
+# -----------------------------------------------------------------------------
+# [stub_functions] -- Functions replaced with empty stubs.
+# -----------------------------------------------------------------------------
+#
+# Stubbed functions compile to: void recomp_FuncName(...) { return; }
+# Use this for functions that interact with hardware you are not emulating,
+# or for debug/logging functions you want to silence.
+
+[[stub_functions]]
+address = "0x80070100"
+name    = "osPiStartDma"
+comment = "PI DMA -- handled by asset loading system instead"
+
+[[stub_functions]]
+address = "0x80070400"
+name    = "osInvalDCache"
+comment = "Cache invalidation -- not needed on modern hardware"
+
+[[stub_functions]]
+address = "0x80070500"
+name    = "osWritebackDCache"
+comment = "Cache writeback -- not needed on modern hardware"

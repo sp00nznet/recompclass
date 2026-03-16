@@ -1,0 +1,66 @@
+{
+  "modules": {
+    "cellSysutil": {
+      "nids": {
+        "0x9D98AAAC": "cellSysutilRegisterCallback",
+        "0xA5B8B691": "cellSysutilCheckCallback",
+        "0x40E895D3": "cellSysutilGetSystemParamInt",
+        "0x938013D0": "cellSysutilGetSystemParamString"
+      }
+    },
+    "cellGcm": {
+      "nids": {
+        "0xB1A3A0A4": "cellGcmInit",
+        "0xD01B570C": "cellGcmSetFlipMode",
+        "0x6F305BFC": "cellGcmGetFlipStatus",
+        "0x35A78B3E": "cellGcmSetWaitFlip",
+        "0x661FE266": "cellGcmGetCurrentField",
+        "0xDC09357E": "cellGcmSetDisplayBuffer",
+        "0xDB769F64": "cellGcmAddressToOffset"
+      }
+    },
+    "cellSysmodule": {
+      "nids": {
+        "0x5A59E258": "cellSysmoduleLoadModule",
+        "0xBB0CF0E5": "cellSysmoduleUnloadModule",
+        "0x5A863B7C": "cellSysmoduleIsLoaded"
+      }
+    },
+    "cellPad": {
+      "nids": {
+        "0x578FE0B0": "cellPadInit",
+        "0x9B40EB12": "cellPadEnd",
+        "0x4CC9B68D": "cellPadGetData",
+        "0x8B8D6B07": "cellPadGetInfo2",
+        "0xD19BEB72": "cellPadSetPortSetting"
+      }
+    },
+    "sys_process": {
+      "nids": {
+        "0xE6F2C1E7": "sys_process_exit",
+        "0x2C847572": "sys_process_getpid",
+        "0x0E7B1F80": "sys_process_get_sdk_version"
+      }
+    },
+    "cellFs": {
+      "nids": {
+        "0x718BF5F8": "cellFsOpen",
+        "0x2CB51F0D": "cellFsClose",
+        "0xBAEF1A8C": "cellFsRead",
+        "0x4C664B2C": "cellFsWrite",
+        "0xEF3BBD5A": "cellFsStat",
+        "0xB1A65E3B": "cellFsMkdir"
+      }
+    },
+    "libc": {
+      "nids": {
+        "0x9B1BD12F": "printf",
+        "0xAEEEB718": "malloc",
+        "0x2A4B1E42": "free",
+        "0x6CDE7519": "memcpy",
+        "0x68B8B72C": "memset",
+        "0x1E479520": "strlen"
+      }
+    }
+  }
+}

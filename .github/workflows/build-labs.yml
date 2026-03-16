@@ -1,0 +1,92 @@
+name: Build Labs
+
+on:
+  push:
+    paths:
+      - 'labs/**'
+  pull_request:
+    paths:
+      - 'labs/**'
+
+jobs:
+  build-c-labs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc make cmake libsdl2-dev
+
+      - name: Build C labs
+        run: |
+          for dir in labs/lab-*/; do
+            if [ -f "$dir/Makefile" ]; then
+              echo "Building $dir..."
+              make -C "$dir" || exit 1
+            elif [ -f "$dir/CMakeLists.txt" ]; then
+              echo "Building $dir with CMake..."
+              cmake -B "$dir/build" -S "$dir" && cmake --build "$dir/build" || exit 1
+            fi
+          done
+
+  test-python-labs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install capstone pefile
+
+      - name: Run Python labs
+        run: |
+          for dir in labs/lab-*/; do
+            if [ -f "$dir/test_lab.py" ]; then
+              echo "Testing $dir..."
+              python "$dir/test_lab.py" || exit 1
+            fi
+          done
+
+  validate-mermaid:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install mermaid-cli
+        run: npm install -g @mermaid-js/mermaid-cli
+
+      - name: Validate Mermaid diagrams
+        run: |
+          # Extract and validate all Mermaid blocks from markdown files
+          find . -name "*.md" -exec grep -l '```mermaid' {} \; | while read file; do
+            echo "Validating Mermaid in $file..."
+            python3 -c "
+          import re, sys, subprocess, tempfile, os
+          with open('$file') as f:
+              content = f.read()
+          blocks = re.findall(r'\`\`\`mermaid\n(.*?)\`\`\`', content, re.DOTALL)
+          for i, block in enumerate(blocks):
+              tmp = tempfile.NamedTemporaryFile(suffix='.mmd', delete=False, mode='w')
+              tmp.write(block)
+              tmp.close()
+              result = subprocess.run(['mmdc', '-i', tmp.name, '-o', '/dev/null'], capture_output=True)
+              os.unlink(tmp.name)
+              if result.returncode != 0:
+                  print(f'FAIL: Block {i+1} in $file')
+                  print(result.stderr.decode())
+                  sys.exit(1)
+          print(f'  {len(blocks)} diagram(s) OK')
+          "
+          done
