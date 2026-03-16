@@ -2,7 +2,7 @@
 
 You have spent fifteen modules learning how to take compiled machine code apart and put it back together for a different architecture. You started with the question "what is static recompilation?" and progressed through binary formats, disassembly, lifting, code generation, and runtime construction. You have worked with the Game Boy's SM83, the SNES's 65C816, the N64's MIPS, the PS1's R3000, the GameCube's PowerPC, the PS2's Emotion Engine, and the PS3's Cell Broadband Engine. You have parsed ROMs, ELFs, DOLs, and SELFs. You have implemented HLE functions for graphics, audio, and input. You have translated SIMD instructions, managed DMA transfers, and resolved NID hashes.
 
-This module is where you prove that you own these skills. The capstone project is an open-ended exercise in which you apply static recompilation to a target of your choosing, demonstrating both technical depth and independent problem-solving.
+This module is where you put those skills to work on something real. The capstone project is an open-ended exercise where you pick a target and build something meaningful -- a recompilation, a tool contribution, or documentation that helps the next person learn faster.
 
 ---
 
@@ -24,7 +24,7 @@ The field of static recompilation is small and growing. There are more interesti
 
 ## 2. Capstone Project Options
 
-Choose one of the four options below. Each is designed to exercise a different combination of the skills you have developed. All four are equally valid paths to completing the course.
+Here are four directions you could take. Pick whichever excites you most, or invent your own -- these are suggestions, not requirements.
 
 ### Option A: Homebrew Recompilation
 
@@ -47,12 +47,12 @@ Build a complete recompilation pipeline for an open-source homebrew game or prog
 | N64 | libdragon examples, N64Brew entries | Medium-High |
 | PS1 | PSn00bSDK examples, Lameguy64 demos | Medium-High |
 
-**Rubric:**
+**What makes a good project:**
 
-- Pipeline completeness (30%): Does the recompiler handle the full binary? Are all instruction types covered?
-- Code quality (25%): Is the recompiler well-structured, documented, and maintainable?
-- Runtime functionality (25%): Does the recompiled program actually run and produce correct output?
-- Documentation (20%): Is the process documented thoroughly enough that someone else could reproduce it?
+- Pipeline completeness: Does the recompiler handle the full binary? Are all instruction types covered?
+- Code quality: Is the recompiler well-structured and maintainable?
+- Runtime functionality: Does the recompiled program actually run and produce correct output?
+- Documentation: Could someone else follow your process and learn from it?
 
 ### Option B: HLE Module Contribution
 
@@ -76,12 +76,12 @@ Contribute a meaningful HLE module implementation or runtime component to an exi
 | N64Recomp | GX runtime function gaps | Medium |
 | Any recomp project | Audio subsystem improvements | Medium-High |
 
-**Rubric:**
+**What makes a good contribution:**
 
-- Correctness (35%): Does the implementation match documented and observed behavior?
-- Test coverage (25%): Are there tests for normal operation, edge cases, and error conditions?
-- Integration quality (20%): Does the code follow the project's conventions and integrate cleanly?
-- Documentation (20%): Are the functions documented? Is there a writeup of your research process?
+- Correctness: Does the implementation match documented and observed behavior?
+- Test coverage: Are there tests for normal operation, edge cases, and error conditions?
+- Integration quality: Does the code follow the project's conventions and integrate cleanly?
+- Documentation: Are the functions documented? Did you write up what you learned?
 
 ### Option C: Toy Recompiler from Scratch
 
@@ -104,13 +104,13 @@ Build a minimal but complete static recompiler for a simplified instruction set 
 - A memory model (even if simple: flat address space is fine)
 - At least one non-trivial feature: interrupts, SIMD, banked registers, or privileged modes
 
-**Rubric:**
+**What makes a good project:**
 
-- Pipeline completeness (30%): Does the recompiler cover the full pipeline from binary to native executable?
-- Architecture quality (25%): Is the code well-organized with clean separation between pipeline stages?
-- Extensibility (20%): Could someone add new instructions or pipeline stages without rewriting existing code?
-- Test suite (15%): Are there test programs that exercise different instruction categories and edge cases?
-- Documentation (10%): Is the ISA documented? Is the recompiler's architecture explained?
+- Pipeline completeness: Does the recompiler cover the full pipeline from binary to native executable?
+- Architecture quality: Is the code well-organized with clean separation between pipeline stages?
+- Extensibility: Could someone add new instructions or pipeline stages without rewriting existing code?
+- Test suite: Are there test programs that exercise different instruction categories and edge cases?
+- Documentation: Is the ISA documented? Is the recompiler's architecture explained?
 
 ### Option D: Documentation Contribution
 
@@ -133,18 +133,18 @@ Write a deep-dive technical document on an aspect of static recompilation not co
 - Analysis of how different recomp projects handle self-modifying code
 - History and evolution of static recompilation from academic origins to modern game preservation
 
-**Rubric:**
+**What makes a good document:**
 
-- Depth (30%): Does the document go beyond surface-level description into genuine technical analysis?
-- Accuracy (25%): Are the technical claims correct and supported by evidence?
-- Clarity (25%): Is the writing clear, well-organized, and accessible to someone who has completed this course?
-- Novelty (20%): Does the document contribute something new -- a perspective, analysis, or synthesis not already available?
+- Depth: Does it go beyond surface-level description into genuine technical analysis?
+- Accuracy: Are the technical claims correct and supported by evidence?
+- Clarity: Is the writing clear, well-organized, and accessible?
+- Novelty: Does it contribute something new -- a perspective, analysis, or synthesis not already available?
 
 ---
 
 ## 3. Project Timeline
 
-The capstone project spans 10 weeks. Here is the recommended timeline:
+If you want to give yourself structure, here is a suggested 10-week timeline. Adjust to fit your pace -- this is self-directed work, not a deadline.
 
 ```mermaid
 gantt
@@ -164,24 +164,24 @@ gantt
     section Polish
     Testing and debugging     :t6, after t5, 7d
     Documentation writing     :t7, after t5, 10d
-    Final review and submission :t8, after t7, 4d
+    Final review and sharing   :t8, after t7, 4d
 ```
 
 ### Week-by-Week Guidance
 
-**Weeks 1-2: Proposal and planning.** Submit a one-page proposal that identifies your chosen option, your specific target, your planned approach, and a rough milestone schedule. You will receive feedback before implementation begins.
+**Weeks 1-2: Planning.** Write down what you want to build, what target you are aiming at, your planned approach, and a rough milestone schedule. Share it in the community for feedback if you want early input.
 
 **Weeks 3-5: Core implementation.** Build the central component of your project. For Option A, this means getting the recompiler to produce C output for the target binary. For Option B, this means implementing the core functions of your HLE module. For Option C, this means building the parser-disassembler-lifter pipeline. For Option D, this means completing your research and producing a first draft.
 
 **Weeks 6-8: Feature completion.** Fill in the gaps. Implement remaining instructions, handle edge cases, build the runtime components, or expand your document's coverage. By the end of Week 8, the project should be functionally complete.
 
-**Weeks 9-10: Testing, documentation, and submission.** Write tests, fix bugs discovered during testing, write your technical documentation, and prepare the final submission.
+**Weeks 9-10: Testing and documentation.** Write tests, fix bugs discovered during testing, write your technical documentation, and share what you built.
 
 ---
 
-## 4. Submission Requirements
+## 4. Sharing Your Work
 
-All capstone projects share these baseline requirements:
+If you want your project to help others learn (and you should -- that is the whole point), aim for these baselines:
 
 ### Repository
 
@@ -268,9 +268,16 @@ The sp00nznet repositories remain your best reference for how production-quality
 
 ### Community and Projects
 
-- **N64Recomp**: The project that demonstrated static recompilation as a practical preservation tool for a complex console. Its documentation and community are the most accessible entry point for new contributors.
+- **[N64Recomp](https://github.com/N64Recomp/N64Recomp)** by Mr-Wiseguy: The project that brought static recompilation to mainstream visibility. Its toolchain, documentation, and growing community of porters (sonicdcer, Rainchus, theboy181, and many others) make it the most accessible entry point for new contributors.
+- **[RT64](https://github.com/rt64/rt64)** by Dario Samo: The rendering backend behind N64Recomp projects. Its accuracy-first, no-per-game-hacks design philosophy is worth studying.
+- **[XenonRecomp](https://github.com/hedge-dev/XenonRecomp)** by Skyth (hedge-dev): The Xbox 360 recompilation toolchain, along with XenosRecomp for GPU shaders. The [UnleashedRecomp](https://github.com/hedge-dev/UnleashedRecomp) project (Skyth, Sajid, Hyper) is a showcase of what the full pipeline looks like at scale.
+- **[rexdex/recompiler](https://github.com/rexdex/recompiler)**: The foundational Xbox 360 static recompiler that inspired XenonRecomp and RexGlueSDK.
+- **[gb-recompiled](https://github.com/arcanite24/gb-recompiled)** by arcanite24 (Brandon G. Neri): Game Boy static recompiler with advanced indirect jump resolution.
+- **[RexGlueSDK](https://github.com/rexglue/rexglue-sdk)** by tomcl7: Xbox 360 recompilation runtime with growing documentation.
+- **[Gilgamesh](https://github.com/AndreaOrru/gilgamesh)** by Andrea Orru: SNES reverse engineering and recompilation toolkit.
 - **ps3recomp**: The most ambitious recompilation target currently under active development. Contributing here means working at the frontier of what static recompilation can do.
 - **Decomp projects** (e.g., SM64, OoT, TWW): While decompilation is a different discipline, the communities overlap significantly and the reverse engineering skills transfer directly.
+- **[ReadOnlyMemo](https://readonlymemo.com/decompilation-projects-and-n64-recompiled-list/)** maintains an updated list of decompilation and recompilation projects across all platforms.
 
 ### Academic Literature
 

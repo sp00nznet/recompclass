@@ -536,7 +536,7 @@ The capstone demonstrates the student's ability to generalize the techniques lea
 
 ## Suggested Pacing
 
-### 16-Week Semester (Guided)
+### 16-Week Schedule (One Module Per Week)
 
 | Week | Module | Topic |
 |------|--------|-------|
@@ -557,11 +557,11 @@ The capstone demonstrates the student's ability to generalize the techniques lea
 | 15 | Module 15 | Xbox / Xbox 360 |
 | 16 | Module 16 | PS3 / Cell |
 
-The capstone project should be started no later than Week 12, with a final submission two weeks after the last module.
+The capstone project works best if you start thinking about it around Week 12, so you can work on it alongside the later modules.
 
 ### Self-Paced
 
-Work through modules in dependency order (see the flowchart above). A reasonable pace is **one module per week**, but students with strong backgrounds in systems programming may move faster. The Unit 4 console modules (11-14) are independent of each other and can be tackled in any order or in parallel.
+Work through modules in dependency order (see the flowchart above). A reasonable pace is **one module per week**, but if you have a strong systems programming background you may move faster. The Unit 4 console modules (11-14) are independent of each other and can be tackled in any order or in parallel.
 
 ---
 

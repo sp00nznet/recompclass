@@ -74,7 +74,9 @@ flowchart TD
 
 ### XenonRecomp: The Recompiler Pipeline
 
-XenonRecomp is the static recompiler for Xbox 360 binaries. Its pipeline follows the standard pattern but with Xbox 360-specific stages:
+[XenonRecomp](https://github.com/hedge-dev/XenonRecomp), created by **Skyth** ([hedge-dev](https://github.com/hedge-dev)), is the static recompiler for Xbox 360 binaries. Its codegen and instruction translation build on foundational work by **[rexdex](https://github.com/rexdex/recompiler)**, whose Xbox 360 recompiler was the first to prove static recompilation was viable on this platform. Skyth's collaboration with **Sajid** (who created XenonAnalyse for binary analysis) and **Hyper** (system-level features) culminated in **[UnleashedRecomp](https://github.com/hedge-dev/UnleashedRecomp)** -- a full native PC port of Sonic Unleashed from Xbox 360, and one of the most impressive demonstrations of static recompilation at scale.
+
+XenonRecomp's pipeline follows the standard pattern but with Xbox 360-specific stages:
 
 1. **XEX2 Parsing**: Decrypt and decompress to extract the raw PE
 2. **PE Analysis**: Parse sections, resolve imports, identify code vs. data regions

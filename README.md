@@ -13,7 +13,7 @@ Static recompilation is the process of disassembling a compiled binary, lifting 
 
 This course changes that. Across **5 Units**, **16 Modules**, and **20 Hands-on Labs**, you will go from understanding basic binary formats to recompiling real console games for modern platforms. Every module draws on real-world projects and production toolchains.
 
-**Author:** [Ned Heller](https://github.com/sp00nznet) (sp00nznet) -- builder of 35+ static recompilation projects spanning 10 CPU architectures, including N64, SNES, Game Boy, Xbox, Xbox 360, PS2, PS3, GameCube, Dreamcast, and DOS.
+**Author:** [Ned Heller](https://github.com/sp00nznet) (sp00nznet) -- hobbyist and static recompilation practitioner with projects spanning 10 CPU architectures, including N64, SNES, Game Boy, Xbox, Xbox 360, PS2, PS3, GameCube, Dreamcast, and DOS.
 
 ---
 
@@ -85,7 +85,7 @@ Whether you are a preservationist, a reverse engineer, a systems programmer, or 
 
 ## Getting Started
 
-1. **Read the syllabus.** The [SYLLABUS.md](SYLLABUS.md) contains the full course schedule, learning objectives, and grading rubric for each module.
+1. **Read the syllabus.** The [SYLLABUS.md](SYLLABUS.md) contains the full course roadmap, learning objectives, and module dependencies.
 
 2. **Set up your tools.** Follow the [Tool Setup Guide](docs/tool-setup.md) to install the disassemblers, compilers, and recompilation toolchains used throughout the course.
 
@@ -128,3 +128,5 @@ This course is released under the [MIT License](LICENSE). You are free to use, m
 ---
 
 *Built by [Ned Heller (sp00nznet)](https://github.com/sp00nznet) -- disassemble, lift, recompile, run.*
+
+*This course stands on the shoulders of many contributors to the static recompilation community. Special thanks to [Mr-Wiseguy](https://github.com/Mr-Wiseguy) (N64Recomp, Zelda64Recomp), [Dario Samo](https://github.com/DarioSamo) (RT64), [Skyth](https://github.com/hedge-dev) (XenonRecomp, UnleashedRecomp), [Sajid](https://github.com/hedge-dev) (XenonAnalyse), [rexdex](https://github.com/rexdex) (foundational Xbox 360 recompiler), [arcanite24](https://github.com/arcanite24) (gb-recompiled), and the many porters and contributors who have made this field what it is today.*

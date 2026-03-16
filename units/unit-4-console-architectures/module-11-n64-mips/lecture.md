@@ -132,7 +132,7 @@ Some N64 games (notably those using the Expansion Pak for 8MB) configure the TLB
 
 ## 3. N64Recomp Tooling
 
-N64Recomp is the primary static recompilation tool for N64 games. It takes a ROM image, disassembles the MIPS code, lifts it to C, and produces a build system that compiles the result into a native executable.
+[N64Recomp](https://github.com/N64Recomp/N64Recomp), created by **Mr-Wiseguy** (Wiseguy), is the primary static recompilation tool for N64 games. It takes a ROM image, disassembles the MIPS code, lifts it to C, and produces a build system that compiles the result into a native executable. Wiseguy's design philosophy is pragmatic: each MIPS instruction is translated literally into C, letting the host compiler handle optimization. An experienced developer can set up a new N64 title in roughly two days using the toolchain.
 
 ### Configuration: .recomp.toml
 
@@ -199,7 +199,7 @@ flowchart LR
 
 ## 4. RT64 Graphics
 
-RT64 is the modern rendering backend used with N64Recomp projects. It replaces the RSP and RDP with a real-time renderer that translates N64 display lists into modern GPU commands.
+[RT64](https://github.com/rt64/rt64), created by **Dario Samo** (@dariosamo), is the modern rendering backend used with N64Recomp projects. It replaces the RSP and RDP with a real-time renderer that translates N64 display lists into D3D12/Vulkan/Metal GPU commands. RT64 started as a ray-tracing mod for Super Mario 64 and evolved into a general-purpose N64 renderer. Its design principle is accuracy-first with zero per-game hacks -- if a game looks wrong, the fix goes into the renderer, not a game-specific workaround.
 
 ### The Translation Problem
 

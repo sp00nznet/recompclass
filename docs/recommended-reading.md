@@ -60,11 +60,35 @@ The Wikipedia pages for MIPS, PowerPC, x86, ARM, SH-4, and other architectures p
 
 ## Community
 
-**N64Recomp Community**
-The N64 static recompilation project and its community are a major reference point for this course. The project demonstrates a complete pipeline: ROM loading, MIPS disassembly, C code generation, and runtime library. Follow the project's GitHub repository and associated Discord server for discussions.
+**N64Recomp** (Mr-Wiseguy) -- [github.com/N64Recomp/N64Recomp](https://github.com/N64Recomp/N64Recomp)
+The N64 static recompilation toolchain and its community are a major reference point for this course. The project demonstrates a complete pipeline: ROM loading, MIPS disassembly, C code generation, and runtime library. The [Zelda64Recomp](https://github.com/Zelda64Recomp/Zelda64Recomp) project is the flagship example. Follow the project's GitHub and Discord for discussions. Wiseguy and Dario discussed the project's design on [Software Engineering Daily (Oct 2024)](https://softwareengineeringdaily.com/2024/10/02/n64-recompiled-with-dario-and-wiseguy/).
+
+**RT64** (Dario Samo) -- [github.com/rt64/rt64](https://github.com/rt64/rt64)
+The modern N64 rendering backend, with accuracy-first design and no per-game workarounds.
+
+**XenonRecomp / UnleashedRecomp** (Skyth, Sajid, Hyper at hedge-dev) -- [github.com/hedge-dev/XenonRecomp](https://github.com/hedge-dev/XenonRecomp)
+Xbox 360 static recompilation toolchain. UnleashedRecomp (Sonic Unleashed PC port) is the showcase project.
+
+**rexdex/recompiler** -- [github.com/rexdex/recompiler](https://github.com/rexdex/recompiler)
+The foundational Xbox 360 static recompiler that inspired later work.
+
+**gb-recompiled** (arcanite24 / Brandon G. Neri) -- [github.com/arcanite24/gb-recompiled](https://github.com/arcanite24/gb-recompiled)
+Game Boy static recompiler with advanced indirect jump resolution. Successfully processes 98.9% of the tested ROM library.
+
+**RexGlueSDK** (tomcl7) -- [github.com/rexglue/rexglue-sdk](https://github.com/rexglue/rexglue-sdk)
+Xbox 360 recompilation runtime with growing wiki documentation.
+
+**Gilgamesh** (Andrea Orru) -- [github.com/AndreaOrru/gilgamesh](https://github.com/AndreaOrru/gilgamesh)
+SNES reverse engineering toolkit with static recompilation support for the 65C816.
+
+**PS2Recomp** (ran-j) -- [github.com/ran-j/PS2Recomp](https://github.com/ran-j/PS2Recomp)
+PS2 ELF static recompiler (MIPS R5900). Early development.
+
+**ReadOnlyMemo** -- [readonlymemo.com](https://readonlymemo.com/decompilation-projects-and-n64-recompiled-list/)
+Maintains an updated list of decompilation and recompilation projects across all platforms.
 
 **Static Recompilation Discord Communities**
-Several Discord servers focus on console reverse engineering and recompilation work. These are good places to ask questions, share progress, and learn from others working on similar projects. Search for communities around specific consoles (N64, PS2, GameCube) or general reverse engineering.
+Several Discord servers focus on console reverse engineering and recompilation work. Search for communities around specific consoles (N64, PS2, GameCube) or general reverse engineering.
 
 **Emulation Development Communities**
 The broader emulation development community (forums, Discord servers, subreddits) has decades of accumulated knowledge about console hardware, ROM formats, and software behavior that directly supports recompilation work.

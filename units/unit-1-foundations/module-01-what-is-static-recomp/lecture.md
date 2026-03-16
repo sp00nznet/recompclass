@@ -243,26 +243,44 @@ These decompilation projects differ from static recompilation in a key way: deco
 
 ### N64Recomp and the Modern Era
 
-**N64Recomp** by Mr-Wiseguy brought static recompilation into mainstream visibility. By statically recompiling *The Legend of Zelda: Majora's Mask* into C code that could be compiled natively, the project demonstrated that static recomp could handle complex commercial games and produce results that rivaled or exceeded what emulators could achieve -- with the added benefit of native performance and moddability.
+**[N64Recomp](https://github.com/N64Recomp/N64Recomp)** by **Mr-Wiseguy** (Wiseguy) brought static recompilation into mainstream visibility. The **[Zelda64Recomp](https://github.com/Zelda64Recomp/Zelda64Recomp)** project -- a native PC port of *The Legend of Zelda: Majora's Mask* -- demonstrated that static recomp could handle complex commercial games and produce results that rivaled or exceeded what emulators could achieve, with native performance and full moddability.
+
+N64Recomp's design philosophy is pragmatic: rather than trying to build a general emulator, it focuses on producing high-quality native ports of individual titles. Each MIPS instruction is translated literally into C, and the host compiler optimizes the result. Wiseguy has noted that an experienced developer can set up a new N64 title for recompilation in roughly two days using the toolchain.
+
+The graphics side is handled by **[RT64](https://github.com/rt64/rt64)**, created by **Dario Samo** (@dariosamo). RT64 is a modern rendering backend that translates N64 display lists into D3D12/Vulkan/Metal draw calls using ubershaders to eliminate pipeline compilation stutters. It started as a ray-tracing mod for Super Mario 64 and evolved into a general-purpose N64 renderer with accuracy-first design -- no per-game hacks. Wiseguy and Dario discussed their collaboration and design philosophy in a [Software Engineering Daily interview (Oct 2024)](https://softwareengineeringdaily.com/2024/10/02/n64-recompiled-with-dario-and-wiseguy/).
+
+Since then, the N64Recomp ecosystem has grown rapidly: **sonicdcer** ported Star Fox 64 and Mario Kart 64, **Rainchus** ported Quest 64, **theboy181** ported Dr. Mario 64, and many others have contributed ports using the toolchain.
 
 The N64 is a particularly good target for static recompilation because its MIPS R4300i CPU has a clean, regular instruction set with fixed-width 32-bit instructions. This makes disassembly reliable and instruction lifting straightforward compared to architectures with variable-length instructions (x86) or complex microarchitectural state (Cell).
 
-### sp00nznet's Portfolio
+### The Growing Community
 
-The most extensive single-person static recompilation portfolio belongs to [sp00nznet](https://github.com/sp00nznet), spanning over 35 projects across 10 architectures:
+Static recompilation has grown from scattered individual efforts into a real community, with multiple people and teams pushing the boundaries:
 
-- **Game Boy (SM83)**: gb-recompiled toolkit and multiple game-specific recompilations
+**Xbox 360 / PowerPC:** **[rexdex](https://github.com/rexdex/recompiler)** built the foundational Xbox 360 static recompiler that proved the concept was viable. Building on that work, **Skyth** ([hedge-dev](https://github.com/hedge-dev)) created **[XenonRecomp](https://github.com/hedge-dev/XenonRecomp)** and **[XenosRecomp](https://github.com/hedge-dev/XenosRecomp)** (for GPU shader translation), which together with **Sajid's** XenonAnalyse powered the **[UnleashedRecomp](https://github.com/hedge-dev/UnleashedRecomp)** project -- a full PC port of Sonic Unleashed from Xbox 360. The **[RexGlueSDK](https://github.com/rexglue/rexglue-sdk)** by tomcl7 provides another Xbox 360 recompilation runtime built on these foundations.
+
+**Game Boy:** **[arcanite24](https://github.com/arcanite24)** (Brandon G. Neri) built **[gb-recompiled](https://github.com/arcanite24/gb-recompiled)**, a Game Boy static recompiler that successfully processes 98.9% of the tested ROM library. Its advanced static solver for JP HL and CALL HL instructions and trace-guided recompilation for complex games demonstrate how much can be done even on simpler architectures.
+
+**SNES:** **Andrea Orru** ([AndreaOrru](https://github.com/AndreaOrru)) created **[Gilgamesh](https://github.com/AndreaOrru/gilgamesh)**, a SNES reverse engineering toolkit with static recompilation support for the 65C816.
+
+**PS2:** **[ran-j](https://github.com/ran-j)** is developing **[PS2Recomp](https://github.com/ran-j/PS2Recomp)** for PS2 ELF binaries (MIPS R5900).
+
+### sp00nznet's Work
+
+This course's author, [sp00nznet](https://github.com/sp00nznet), has built recompilation projects spanning 10 architectures:
+
+- **Game Boy (SM83)**: Game-specific recompilations
 - **SNES (65816)**: snesrecomp framework
 - **DOS (x86 real mode)**: DOS game recompilations
 - **N64 (MIPS R4300i)**: Multiple N64 title recompilations
 - **Xbox (x86)**: xboxrecomp toolkit
-- **Xbox 360 (PowerPC/Xenon)**: 360tools, XenonRecomp-based projects
+- **Xbox 360 (PowerPC/Xenon)**: 360tools and XenonRecomp-based projects
 - **GameCube (PowerPC/Gekko)**: gcrecomp framework
 - **Dreamcast (SH-4)**: Dreamcast title recompilations
 - **PS2 (MIPS R5900)**: PS2 game recompilations
 - **PS3 (Cell BE / PPU + SPU)**: ps3recomp, tackling one of the most complex consumer architectures ever made
 
-This body of work demonstrates that static recompilation is a general technique applicable across wildly different architectures, from 8-bit processors to heterogeneous multiprocessor systems. The same fundamental pipeline -- parse, disassemble, analyze, lift, generate, link -- applies in every case, with architecture-specific details handled in the lifter and runtime.
+This breadth across architectures is what motivated creating this course -- the same fundamental pipeline applies in every case, and the lessons learned on one architecture directly inform work on the next.
 
 ### The Preservation Argument
 
