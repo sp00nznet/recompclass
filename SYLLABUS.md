@@ -357,7 +357,7 @@ flowchart TD
 
 **Labs**
 
-- Lab 8 -- MZ Header Parser: Parse a DOS MZ executable header (binary format practice on a different format).
+- Lab 8 -- Game Boy Recompiler Pipeline: Walk through the gb-recompiled pipeline end to end -- ROM ingestion, disassembly, lifting, shim linking, and native build.
 
 **Key References**
 
@@ -437,6 +437,7 @@ flowchart TD
 
 **Key References**
 
+- [gbarecomp](https://github.com/sp00nznet/gbarecomp) (GBA recompilation toolkit)
 - Architecture reference: `docs/architecture-reference/arm7tdmi.md`
 
 ---
@@ -458,11 +459,11 @@ flowchart TD
 **Labs**
 
 - Lab 11 -- CFG to Mermaid: Convert a control-flow graph to Mermaid diagram format.
-- Lab 12 -- MIPS Lifter: Translate a block of MIPS instructions to C.
+- Lab 12 -- DOS MZ Parser and Lifter: Parse a DOS MZ executable header and lift x86-16 instructions with segment handling.
 
 **Key References**
 
-- sp00nznet DOS recomp projects (fallout1-re, fallout2-re)
+- sp00nznet DOS recomp projects ([fallout1-re](https://github.com/sp00nznet/fallout1-re), [fallout2-re](https://github.com/sp00nznet/fallout2-re))
 - [pcrecomp](https://github.com/sp00nznet/pcrecomp)
 
 ---
@@ -644,7 +645,7 @@ flowchart TD
 
 **Labs**
 
-- Lab 17 -- XEX2 Inspector: Parse an Xbox 360 XEX2 header (binary format practice on a complex format).
+- Lab 17 -- N64 ROM Analyzer: Parse an N64 ROM header, identify endianness (z64/v64/n64), and extract function boundaries using N64Recomp configuration.
 - Lab 47 -- Endianness Conversion Library: Implement byte-swap utilities for big-endian ↔ little-endian conversion.
 
 **Key References**
@@ -744,11 +745,11 @@ flowchart TD
 
 **Labs**
 
-- Lab 19 -- NID Resolver: Resolve PS3 NID (numeric ID) function stubs (binary format practice on a different system).
+- Lab 19 -- Dreamcast Binary Loader: Parse a Dreamcast disc image (GD-ROM), extract the 1ST_READ.BIN executable, and set up the SH-4 memory map for disassembly.
 
 **Key References**
 
-- sp00nznet Dreamcast recomp projects
+- [dcrecomp](https://github.com/sp00nznet/dcrecomp) (Dreamcast/Naomi SH-4 recompilation framework)
 - Architecture reference: `docs/architecture-reference/sh4.md`
 
 ---
@@ -769,7 +770,7 @@ flowchart TD
 
 **Labs**
 
-- Lab 20 -- SPU Simulator: Simulate basic SPU operations (C-based, reused from PS3 context).
+- Lab 20 -- PS2 ELF Analyzer: Parse a PS2 ELF binary, identify R5900 and VU microcode sections, and lift MMI (128-bit multimedia) instructions to C with SIMD intrinsics.
 
 **Key References**
 
@@ -1044,8 +1045,10 @@ Work through modules in dependency order (see the flowchart above). A reasonable
 |---|---|---|
 | gb-recompiled | https://github.com/sp00nznet/gb-recompiled | Modules 1, 3, 7, 8, 9, 15 |
 | snesrecomp | https://github.com/sp00nznet/snesrecomp | Modules 3, 7, 11 |
+| gbarecomp | https://github.com/sp00nznet/gbarecomp | Module 12 |
 | pcrecomp | https://github.com/sp00nznet/pcrecomp | Module 13 |
 | gcrecomp | https://github.com/sp00nznet/gcrecomp | Modules 15, 22, 23, 29 |
+| dcrecomp | https://github.com/sp00nznet/dcrecomp | Module 24 |
 | xboxrecomp | https://github.com/sp00nznet/xboxrecomp | Modules 14, 17, 27 |
 | ps3recomp | https://github.com/sp00nznet/ps3recomp | Modules 30, 31 |
 | 360tools | https://github.com/sp00nznet/360tools | Module 28 |

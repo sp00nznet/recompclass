@@ -2730,4 +2730,4 @@ If you are wondering which console to tackle after completing this module, consi
 
 ## Next Module
 
-[Module 27: Xbox and Win32](../module-27-xbox-win32/lecture.md) -- The original Xbox, where same-ISA recompilation introduces a completely different set of challenges. x86-32 to x86-64, the global register model, and 147 kernel imports to shim.
+[Module 26: Saturn / Dual SH-2](../../unit-7-advanced-targets/module-26-saturn-sh2/lecture.md) -- The Sega Saturn's dual SH-2 architecture is where multi-CPU recompilation begins. Two independent processors, VDP1+VDP2 graphics, and a 68K audio CPU -- all running concurrently.

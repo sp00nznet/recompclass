@@ -418,7 +418,7 @@ This is why we can build recompiler frameworks that share infrastructure across 
 
 ### Preview: Lifting
 
-In Module 9, we will explore **lifting** -- the process of converting architecture-specific instructions into a higher-level intermediate representation. Lifting is what allows the recompiler to:
+In Module 7, we will explore **lifting** -- the process of converting architecture-specific instructions into a higher-level intermediate representation. Lifting is what allows the recompiler to:
 
 - Optimize across instruction boundaries
 - Eliminate dead flag computations

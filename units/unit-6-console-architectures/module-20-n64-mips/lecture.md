@@ -350,4 +350,4 @@ flowchart TD
 
 ## Next Module
 
-[Module 12: Xbox 360 and PowerPC Xenon](../module-12-xbox360-ppc/lecture.md) -- Moving from a 93.75 MHz embedded MIPS to a 3.2 GHz triple-core PowerPC, with an order of magnitude more functions and an entirely different set of challenges.
+[Module 21: N64 Deep Dive -- RSP & RDP](../module-21-n64-rsp-rdp/lecture.md) -- Now that you can recompile the CPU side, it is time to tackle the Reality Coprocessor: RSP microcode, display lists, and the RDP rendering pipeline.

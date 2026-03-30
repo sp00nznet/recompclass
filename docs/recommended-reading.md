@@ -87,6 +87,9 @@ PS2 ELF static recompiler (MIPS R5900). Early development.
 **ReadOnlyMemo** -- [readonlymemo.com](https://readonlymemo.com/decompilation-projects-and-n64-recompiled-list/)
 Maintains an updated list of decompilation and recompilation projects across all platforms.
 
+**sp00nznet recomp Discord** -- [discord.gg/CRpzGWZFcu](https://discord.gg/CRpzGWZFcu)
+The community Discord for this course and sp00nznet's recompilation projects. A place to discuss debugging, recomp work, course material, and connect with others in the static recompilation space.
+
 **Static Recompilation Discord Communities**
 Several Discord servers focus on console reverse engineering and recompilation work. Search for communities around specific consoles (N64, PS2, GameCube) or general reverse engineering.
 
@@ -124,24 +127,75 @@ The WDC 65C816 datasheet from Western Design Center is the official reference. T
 
 ## sp00nznet Projects as Learning References
 
-The following projects by sp00nznet (Ned Heller) serve as practical, real-world examples of static recompilation at various stages of development. They are referenced throughout the course labs:
+The following projects by [sp00nznet](https://github.com/sp00nznet) (Ned Heller) serve as practical, real-world examples of static recompilation at various stages of development. They are referenced throughout the course labs.
 
-**ppc750-recomp**
-A static recompiler targeting the PowerPC 750 (Gekko/Broadway) ISA, relevant to GameCube and Wii titles. Demonstrates DOL loading, PowerPC disassembly, CFG construction, and C code generation.
+### Recompilation Toolkits
 
-**sh4-recomp**
-A static recompiler for the SH-4 architecture (Dreamcast). Notable for its handling of delay slots and the SH-4's compact 16-bit instruction encoding (SH-2 compat mode).
-
-**spu-recomp**
-A static recompiler for the Cell SPU. Showcases the unique challenges of the SPU architecture: 128-bit register file, local store memory model, and channel-based I/O.
-
-**sm83-recomp**
+**gb-recompiled** -- [github.com/sp00nznet/gb-recompiled](https://github.com/sp00nznet/gb-recompiled)
 A recompiler for the Game Boy's SM83 CPU. A good starting point for learning because the SM83 has a small instruction set and simple memory model, making the full pipeline easy to follow.
 
-**65816-recomp**
+**snesrecomp** -- [github.com/sp00nznet/snesrecomp](https://github.com/sp00nznet/snesrecomp)
 A recompiler for the 65816 processor used in the SNES. Demonstrates handling of bank switching, variable-width registers (8/16-bit accumulator and index modes), and the 65816's many addressing modes.
 
-**xb-recomp**
-A static recompiler targeting the original Xbox (x86-based). Covers XBE loading, x86 disassembly, and the particular challenges of recompiling x86 code (variable-length instructions, complex flag behavior, segmented legacy).
+**gbarecomp** -- [github.com/sp00nznet/gbarecomp](https://github.com/sp00nznet/gbarecomp)
+A static recompilation toolkit for the Game Boy Advance (ARM7TDMI). Covers ARM/Thumb interworking, BIOS HLE, and tile/bitmap mode graphics shimming.
+
+**pcrecomp** -- [github.com/sp00nznet/pcrecomp](https://github.com/sp00nznet/pcrecomp)
+A static recompiler for DOS/PC x86 targets. Handles real-mode segmented memory, DOS API shimming, and interrupt-driven I/O translation.
+
+**gcrecomp** -- [github.com/sp00nznet/gcrecomp](https://github.com/sp00nznet/gcrecomp)
+A static recompiler targeting the PowerPC 750 (Gekko/Broadway) ISA, relevant to GameCube and Wii titles. Demonstrates DOL loading, PowerPC disassembly, CFG construction, and C code generation.
+
+**dcrecomp** -- [github.com/sp00nznet/dcrecomp](https://github.com/sp00nznet/dcrecomp)
+A static recompiler for the SH-4 architecture (Dreamcast/Naomi). Notable for its handling of delay slots and the SH-4's compact 16-bit instruction encoding.
+
+**xboxrecomp** -- [github.com/sp00nznet/xboxrecomp](https://github.com/sp00nznet/xboxrecomp)
+A static recompiler targeting the original Xbox (x86-based). Covers XBE loading, x86 disassembly, and the particular challenges of recompiling x86 code (variable-length instructions, complex flag behavior).
+
+**ps3recomp** -- [github.com/sp00nznet/ps3recomp](https://github.com/sp00nznet/ps3recomp)
+PS3 runtime libraries and recompilation support. Showcases the unique challenges of the Cell architecture: PPU (PowerPC) + SPU recompilation, 128-bit register file, local store memory model, and channel-based I/O.
+
+**360tools** -- [github.com/sp00nznet/360tools](https://github.com/sp00nznet/360tools)
+Xbox 360 analysis and recompilation utilities. Used alongside XenonRecomp for Xenon PPC targets.
+
+**neogeorecomp** -- [github.com/sp00nznet/neogeorecomp](https://github.com/sp00nznet/neogeorecomp)
+Neo Geo MVS/AES runtime for 68000-based arcade hardware recompilation.
+
+**MidwayRecomp** -- [github.com/sp00nznet/MidwayRecomp](https://github.com/sp00nznet/MidwayRecomp)
+MIPS-IV recompiler for Midway arcade hardware. Demonstrates recompilation of arcade board targets beyond home consoles.
+
+**genrecomp** -- [github.com/sp00nznet/genrecomp](https://github.com/sp00nznet/genrecomp)
+Genesis/Mega Drive recompilation toolkit.
+
+### Game-Specific Recompilation Projects
+
+These repositories demonstrate end-to-end recompilation of specific titles and serve as case studies:
+
+**flow** -- [github.com/sp00nznet/flow](https://github.com/sp00nznet/flow)
+First native PC port of thatgamecompany's flOw (PS3 → C++). Over 91,000 PowerPC functions lifted to C++, ~190 MB of generated source. The most ambitious PS3 recomp project to date.
+
+**mk** -- [github.com/sp00nznet/mk](https://github.com/sp00nznet/mk)
+Super Mario Kart (SNES 65C816 → native). A complete SNES recompilation case study.
+
+**mariopaint** -- [github.com/sp00nznet/mariopaint](https://github.com/sp00nznet/mariopaint)
+Mario Paint (SNES → native PC).
+
+**racer** -- [github.com/sp00nznet/racer](https://github.com/sp00nznet/racer)
+Star Wars Episode I: Racer (N64 → native).
+
+**Rampage** -- [github.com/sp00nznet/Rampage](https://github.com/sp00nznet/Rampage)
+Rampage World Tour and Rampage 2 (N64 → native).
+
+**crazytaxi** -- [github.com/sp00nznet/crazytaxi](https://github.com/sp00nznet/crazytaxi)
+Crazy Taxi (Dreamcast SH-4 → x86-64).
+
+**ww** -- [github.com/sp00nznet/ww](https://github.com/sp00nznet/ww)
+GameCube game static recompilation.
+
+**burnout3** -- [github.com/sp00nznet/burnout3](https://github.com/sp00nznet/burnout3)
+Burnout 3: Takedown (Xbox → Windows x86-64).
+
+**fallout1-re** / **fallout2-re** -- [github.com/sp00nznet/fallout1-re](https://github.com/sp00nznet/fallout1-re), [github.com/sp00nznet/fallout2-re](https://github.com/sp00nznet/fallout2-re)
+DOS-era Fallout reverse engineering and recompilation projects.
 
 These repositories illustrate different design decisions and tradeoffs across a range of guest architectures. Studying how each one handles binary loading, disassembly, control flow analysis, and code generation will reinforce the concepts taught in the course.

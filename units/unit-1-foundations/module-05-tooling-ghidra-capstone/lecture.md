@@ -1496,4 +1496,4 @@ The next unit puts all of this into practice as we build a complete Game Boy rec
 
 ---
 
-**Next: [Unit 2 -- Game Boy Recompilation](../../unit-2-gameboy/module-06-gb-rom-parsing/lecture.md)**
+**Next: [Module 6 -- Control-Flow Recovery](../../unit-2-core-techniques/module-06-control-flow-recovery/lecture.md)**

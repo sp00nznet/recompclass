@@ -372,4 +372,4 @@ Another XBLA title, a port of the Dreamcast/arcade classic:
 
 ## Next Module
 
-[Module 13: Original Xbox and Win32](../module-13-xbox-win32/lecture.md) -- What happens when the source and target architectures are the same ISA? The original Xbox runs x86, just like your PC. It should be easy. It is not.
+[Module 29: GPU Pipeline Translation](../module-29-gpu-translation/lecture.md) -- Fixed-function to programmable shaders, texture format conversion, and resolution scaling. The GPU side of the recompilation problem.

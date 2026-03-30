@@ -380,4 +380,4 @@ The following lab accompanies this module:
 
 ---
 
-**Next: [Module 7 -- The Indirect Call Problem](../module-07-indirect-calls/lecture.md)**
+**Next: [Module 14 -- The Indirect Call Problem](../../unit-4-pipeline-essentials/module-14-indirect-calls/lecture.md)**

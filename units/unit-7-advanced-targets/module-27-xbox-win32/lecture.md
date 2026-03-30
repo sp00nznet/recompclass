@@ -353,4 +353,4 @@ An interesting case -- X-Wing Alliance is a PC game that was never on Xbox, but 
 
 ## Next Module
 
-[Module 14: GameCube, Dreamcast, and PS2](../module-14-gc-dc-ps2/lecture.md) -- Three consoles from the same generation, three completely different architectures. PowerPC with Paired Singles, SH-4 with delay slots, and the 128-bit Emotion Engine.
+[Module 28: Xbox 360 / Xenon PPC](../module-28-xbox360-xenon/lecture.md) -- From x86 to triple-core PowerPC with VMX128 SIMD. The Xbox 360 takes everything you learned about the original Xbox and adds multi-core complexity and an entirely different ISA.

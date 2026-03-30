@@ -389,4 +389,4 @@ The following labs accompany this module:
 
 ---
 
-**Next: [Module 5 -- SNES: 65816 and Hardware Integration](../module-05-snes/lecture.md)**
+**Next: [Module 10 -- NES: 6502 Recompilation](../module-10-nes-6502/lecture.md)**

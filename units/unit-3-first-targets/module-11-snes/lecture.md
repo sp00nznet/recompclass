@@ -294,4 +294,4 @@ The following lab accompanies this module:
 
 ---
 
-**Next: [Module 6 -- DOS: 16-bit x86 and Real Mode](../module-06-dos/lecture.md)**
+**Next: [Module 12 -- GBA: ARM7TDMI Recompilation](../module-12-gba-arm7/lecture.md)**

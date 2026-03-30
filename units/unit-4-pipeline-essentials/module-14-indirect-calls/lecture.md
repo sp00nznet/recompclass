@@ -361,4 +361,4 @@ The following lab accompanies this module:
 
 ---
 
-**Next: [Module 8 -- N64: MIPS and the Reality Signal Processor](../module-08-n64/lecture.md)**
+**Next: [Module 15 -- Hardware Shims and SDL2 Integration](../module-15-hardware-shims/lecture.md)**

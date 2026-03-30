@@ -21,6 +21,8 @@ This course changes that. Across **8 Units**, **32 Modules**, and **50 Hands-on 
 
 **Author:** [Ned Heller](https://github.com/sp00nznet) (sp00nznet) -- hobbyist and static recompilation practitioner with projects spanning 12 CPU architectures, including N64, SNES, Game Boy, NES, GBA, Xbox, Xbox 360, PS2, PS3, GameCube, Dreamcast, Saturn, Wii, and DOS.
 
+**Community:** Join the [sp00nznet recomp Discord](https://discord.gg/CRpzGWZFcu) -- a place to discuss static recompilation, debugging, course material, or just hang out with others working on recomp projects.
+
 ---
 
 ## Why This Course?
@@ -159,6 +161,12 @@ recompclass/
     unit-8-extreme-targets/     Modules 30-32
   labs/                50 hands-on lab exercises
 ```
+
+---
+
+## Community
+
+Have questions about static recompilation, need help debugging a recomp project, or want to discuss the course material? Join the **[sp00nznet recomp Discord](https://discord.gg/CRpzGWZFcu)**.
 
 ---
 

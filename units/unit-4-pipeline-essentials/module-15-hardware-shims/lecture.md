@@ -556,4 +556,4 @@ The runtime library is the indispensable companion to the generated code. The ke
 
 ---
 
-**Next: [Module 11 -- N64 / MIPS Recompilation](../../unit-4-console-architectures/module-11-n64-mips/lecture.md)**
+**Next: [Module 16 -- Semester 1 Mini-Project](../module-16-semester1-project/lecture.md)**
