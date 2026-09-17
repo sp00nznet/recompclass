@@ -278,13 +278,155 @@ This is semantically equivalent to the hardware behavior but executes in a singl
 
 ## 6. Real-World Reference
 
-**snesrecomp** by sp00nznet is a static recompilation framework for SNES games. It implements M/X flag tracking, the full 65816 instruction lifter with width-dependent code generation, and integration with LakeSnes hardware components. It handles LoROM and HiROM cartridges and has been tested against multiple commercial titles.
+### [snesrecomp](https://github.com/sp00nznet/snesrecomp) -- hardware, not a recompiler
 
-**mk** by sp00nznet applies SNES recompilation to a specific game, demonstrating how the general framework handles a real commercial ROM with complex bank switching, DMA-heavy graphics updates, and audio integration through the SPC700.
+Correct a likely assumption first: snesrecomp does **not** contain a 65816 lifter. It
+is two things, and neither generates code.
 
-These projects demonstrate that the integration pattern described in this module -- recompiled CPU driving emulated hardware -- is practical and produces playable results. The recompiled CPU runs faster than an interpreted or even JIT-compiled CPU, while the emulated PPU and APU provide hardware-accurate video and audio.
+**The hardware**, as a linkable library. It does not reimplement the PPU, SPC700, DMA
+or Mode 7 -- it wraps [LakeSnes](https://github.com/sp00nznet/LakeSnes) (MIT) and
+exposes it behind `bus_write8(bank, addr, val)`. Its README states the strategy
+directly:
 
----
+> Chop up an emulator, turn the hardware into libraries, let game-specific projects
+> link against them.
+
+**An op kit.** `include/snesrecomp/cpu_ops.h` holds one macro or inline function per
+65816 instruction, over a global `g_cpu`. Register width lives there as ordinary
+runtime state -- `flag_M` and `flag_X` are booleans that `REP`/`SEP` write and every
+width-sensitive op reads -- which is how the module's static M/X tracking problem gets
+deferred rather than solved.
+
+Your lifter's job is therefore to decide *which* op to emit with *which* operand. The
+semantics are somebody else's already-tested code.
+
+**And it is the interception host.** This is the part to understand before you read any
+status claim about a SNES port. `src/recomp_interp.c` runs LakeSnes's timed frame loop
+(`snes_runFrame`, real PPU/APU/NMI timing) and installs `g_cpuRecompHook`, which the
+emulated CPU calls **at every opcode fetch**. If a recompiled function is registered at
+that address, it runs; otherwise the emulator interprets the original 65816 code.
+
+Read the contract in `include/snesrecomp/func_table.h` closely:
+
+> If a recompiled native function is registered for the address, it is called. Otherwise,
+> if the interpreter fallback is enabled, the original 65816 code at that address is
+> executed on the LakeSnes CPU (see `recomp_interp_call`) and the call still **"succeeds"
+> (returns true)**. Only when interpretation is disabled does an unregistered address
+> return false.
+
+**The fallback reports success.** With interpretation enabled -- the default -- a project
+with zero recompiled functions registered runs the game flawlessly and reports that every
+dispatch succeeded. Module 12 shows the GBA toolkit doing the identical thing on top of
+mGBA, including silently rolling back functions that crash.
+
+That is not a flaw; it is what makes incremental migration possible. But it means **"the
+game is playable" is not a statement about your recompiler**, and any SNES or GBA port
+that leads with a screenshot is telling you about the emulator underneath it. The number
+that means something is how many functions are registered and passing with the fallback
+*off*.
+
+### The pattern that matters: [mk](https://github.com/sp00nznet/mk) (Super Mario Kart)
+
+*Super Mario Kart*, playable end to end -- title, driver select, class and cup select,
+a live Mode-7 race, save states, two-player keyboard and gamepad, and lockstep netplay.
+
+To be precise about what that sentence means: **the game plays because LakeSnes is
+running the real ROM.** The repository says so -- the recompiled-shell path is "where the
+static-recompilation work grows incrementally." Take the playability as evidence that the
+*harness* is right, and look elsewhere for evidence about the lifter.
+
+The part to steal is not the game, it is the **migration strategy**. The project runs
+in two modes against the same backend:
+
+| Mode | What runs the game |
+|---|---|
+| real-frame (default) | LakeSnes runs the genuine ROM through its cycle-accurate frame -- **this is the mode the screenshots are from** |
+| `SMK_SHELLS=1` | hand-written recompiled functions run where they exist, LakeSnes interprets the rest |
+
+Recompiled functions are declared with `RECOMP_PATCH(name, snes_addr) { ... }` and
+auto-register into the dispatch table at static-init time. Adding a translated
+function is a one-line change with no central registration list to edit --
+`include/snesrecomp/recomp_patch.h` credits N64Recomp's macro of the same name for the
+idea.
+
+This is **incremental recompilation**, and it dissolves the worst thing about starting
+a recompilation project: you do not need a complete, correct lift before you have
+anything that runs. You have a playable game on day one, because the emulator is still
+there. You then move it function by function into native C, and at every single commit
+the thing still boots. If a recompiled function is wrong, you delete the shell and the
+emulator covers it again while you think.
+
+Compare that with the all-or-nothing bring-ups in Modules 27 and 28, where nothing runs
+until nearly everything is lifted, and a single bad function is a crash in a 40,000-
+function binary. **If your platform has a good open emulator, start this way.**
+
+The same header also documents the modding hook that falls out for free: link a second
+object defining a `RECOMP_PATCH` at the same SNES address, and the last constructor to
+run wins. Overriding a shipped game function is a link-order question.
+
+### [mariopaint](https://github.com/sp00nznet/mariopaint) -- the best-documented hybrid
+
+*Mario Paint* makes two points, and unlike most ports its source is committed, so you can
+check both.
+
+**Peripherals are content.** The title's whole reason to exist was the **SNES Mouse**, so
+the port implements the SNES Mouse serial protocol and drives it from your PC mouse. No
+amount of PPU accuracy substitutes for that one peripheral.
+
+**And it is honest about being a hybrid.** `src/main/main.c` registers the recompiled
+functions, then:
+
+```c
+/* Anything not yet recompiled runs the original ROM code on the
+ * LakeSnes CPU instead of silently doing nothing. */
+recomp_interp_set_enabled(true);
+```
+
+The 8,398 lines in `src/recomp/` (`mp_title.c`, `mp_canvas.c`, `mp_tools.c`,
+`mp_shapes.c` ...) are hand-translated 65816 routines, and they are doing real work --
+the comments explain that the ROM's title loop has no frame sync of its own, so
+interpreted it "burns all 2048 iterations instantly with nothing drawn," and the screen
+only appears because the recompiled `mp_018260` drives a frame per iteration.
+
+So this is a genuine partial recompilation on an emulator host. Both halves are load-
+bearing, and the repository says which is which.
+
+### The A/B lever -- steal this
+
+The same file documents the single best debugging affordance in the SNES corpus:
+
+```c
+/*
+ * MP_INTERP_FUNCS="018000,0087EE" -- hand specific addresses back to the
+ * interpreter even though a recompiled version exists. Registering NULL
+ * makes func_table_lookup miss, so dispatch falls through to the genuine
+ * ROM code. This is the A/B lever for "is our translation of X wrong?":
+ * run it interpreted and see if the symptom goes away.
+ */
+```
+
+An environment variable that moves any function back to ground truth, one address at a
+time, without rebuilding. Paired with `MP_REALFRAME=1`, which runs the genuine ROM
+through LakeSnes so you can "capture the same frame both ways and diff," you get a
+complete differential workflow for free.
+
+**This is the compensation for the emulator host.** Module 12's GBA toolkit has the same
+architecture and none of this instrumentation, which is why its claims are harder to
+believe. If you build a hybrid, build the levers that let you prove which half did the
+work -- otherwise the emulator underneath makes every result unfalsifiable. Module 18
+develops this.
+
+### [3dsnes](https://github.com/sp00nznet/3dsnes) -- and how to measure a corpus
+
+Not a recompilation -- it is a voxel renderer that turns the SNES tile and sprite
+output into 3D scenes -- but it is included here for its validation method, which
+Module 18 returns to. It reports **340 of 375 games (91%)** drawing a real 3D scene,
+and the README is careful about how that number was obtained: an unattended run over
+the whole corpus, *"not by spot-checks."*
+
+That distinction is the entire difference between a number you can publish and a number
+you cannot. If you cannot re-derive your compatibility figure by running one command
+tonight, you do not have a compatibility figure -- you have an impression.
 
 ## Lab
 

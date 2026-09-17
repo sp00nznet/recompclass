@@ -488,36 +488,61 @@ For graphics, this can be automated with screenshot comparison: capture a frame 
 
 ## 8. Real-World Scale
 
-### xboxrecomp Runtime
+"How big is the runtime" has a real answer per platform, and the useful version of the
+number is **how many OS entry points you must satisfy before the program will run at
+all.** That is countable from the binary's import table on day one, before you write a
+line of shim code. Do it first -- it is the single best estimate of the job you are
+taking on.
 
-The xboxrecomp runtime must implement:
-- **D3D8 translation layer**: thousands of lines translating D3D8 API calls to D3D11, including vertex/pixel shader translation, texture format conversion, and render state mapping
-- **Kernel shims**: implementations for Xbox kernel imports covering memory management, file I/O, threading, synchronization, and system time
-- **Audio shims**: DirectSound buffer management and mixing through XAudio2
-- **Input**: XInput controller mapping (straightforward since Xbox controllers are well-supported on modern Windows)
-- **XBE loader**: parsing the Xbox executable format and setting up the memory map
+| Platform | The import surface, measured |
+|---|---|
+| Original Xbox | **147 kernel imports** mapped to Win32 in [burnout3](https://github.com/sp00nznet/burnout3) |
+| Xbox 360 | **209 kernel/XAM imports** in [ydkj](https://github.com/sp00nznet/ydkj) -- all already provided by the runtime, so **zero** hand-written stubs |
+| PS3 | **93 HLE modules**, 300+ syscalls; [flow](https://github.com/sp00nznet/flow) resolved 140/140 imports across 12 libraries, [ducktales](https://github.com/sp00nznet/ducktales) wired 239 NIDs |
+| GameCube | a minimal OS -- apploader plus SDK libraries (heap, DVD, threads, timing) |
 
-The burnout3 project extends this further with networking stubs (the game has online multiplayer code that must be gracefully disabled) and title-specific patches for behaviors that differ between the original hardware and the emulated environment.
+The Xbox 360 row is the encouraging one and the PS3 row is the warning. A mature runtime
+turns "implement 209 OS functions" into "link against a library," and that is the entire
+argument for the toolkit-plus-game split this course keeps recommending. The PS3 row is
+what it looks like before anyone has done that work for you.
 
-### ps3recomp Runtime
+### [xboxrecomp](https://github.com/sp00nznet/xboxrecomp) -- the runtime
 
-ps3recomp is the most extreme example of runtime complexity:
-- **93 HLE modules**: each module implements a PS3 system library (cellSysutil, cellGcm, cellAudio, cellFs, cellPad, cellSysmodule, sceNp, etc.)
-- **Hundreds of individual function implementations**: each function in each module needs a shim
-- **Cell SPE management**: scheduling SPE tasks, managing local store DMA transfers, synchronizing SPE and PPE execution
-- **RSX graphics**: translating GCM command buffers to modern GPU commands
-- **Threading model**: the PS3 uses a different threading and synchronization model than POSIX/Win32; the runtime must bridge them
+D3D8 to D3D11 translation including shader translation, texture format conversion and
+render state mapping; kernel shims for memory, file I/O, threading, synchronisation and
+time; DirectSound to XAudio2; XInput; and the XBE loader with its memory map. Its
+`src/` is organised by subsystem -- `apu/`, `audio/`, `d3d/` -- which is the shape a
+runtime converges on.
 
-This runtime is essentially a PS3 operating system reimplementation, focused on the subset that games actually use. It represents tens of thousands of lines of code and months of development effort.
+`burnout3` extends it with networking stubs to disable Xbox Live cleanly, plus
+title-specific patches. That split -- shared runtime, per-title patches -- is the one to
+copy.
 
-### gcrecomp Runtime
+### [ps3recomp](https://github.com/sp00nznet/ps3recomp) -- a reimplemented operating system
 
-The gcrecomp runtime handles:
-- **GX graphics pipeline**: TEV stage translation, display list parsing, vertex format conversion
-- **Audio interface**: DSP ADPCM decoding, audio DMA management
-- **DVD interface**: reading from ISO/GCM images
-- **Controller input**: GameCube controller to SDL2 gamepad mapping
-- **OS functions**: the GameCube has a minimal OS (apploader + SDK libraries) that must be shimmed
+The most extreme case in the corpus: 93 HLE modules, hundreds of function
+implementations, SPE task scheduling and local-store DMA, RSX GCM command translation,
+and a threading model that has to be bridged to Win32/POSIX.
+
+Its `docs/` is 26 files, and the titles alone tell you what a runtime of this size
+actually needs: `MODULE_STATUS.md`, `NID_SYSTEM.md`, `SYSCALLS.md`, `SPU_LIFTER.md`,
+`SPU_FALLBACK.md`, `RSX_GRAPHICS.md`, `FIRMWARE_LLE.md`, `REGRESSION_GATE.md`,
+`GAME_PORTING_GUIDE.md`.
+
+Two of those are worth flagging now. **`REGRESSION_GATE.md`** -- at this scale you need
+an automated gate, because you cannot hold what still works in your head. And
+**`FIRMWARE_LLE.md`**, which is the escape hatch Module 30 describes: when shimming a
+system library gets hard enough, decrypt the real `.prx` and recompile *that* instead.
+flOw did exactly this for `cellSpurs`/`cellSync` rather than write better stubs.
+
+### [gcrecomp](https://github.com/sp00nznet/gcrecomp) -- the runtime
+
+GX pipeline translation with TEV stage handling and display list parsing, DSP ADPCM
+decoding and audio DMA, DVD reads from ISO/GCM images, controller mapping, and Dolphin
+OS HLE. Its `src/` is split `gx/ audio/ input/ os/ runtime/` -- again, by subsystem.
+
+Note the `example/` directory next to those. A runtime with a worked example in the repo
+is a runtime someone else can actually adopt.
 
 ### The Runtime IS the Hard Part
 

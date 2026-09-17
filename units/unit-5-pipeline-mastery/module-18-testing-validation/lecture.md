@@ -1605,14 +1605,123 @@ Key insight from N64Recomp: **for complex targets, visual comparison is more pra
 
 ### gb-recompiled
 
-gb-recompiled by Matt Currie takes a more rigorous approach possible because of the Game Boy's simplicity. It can do full CPU state comparison because the SM83 is simple enough that every instruction can be verified:
+[gb-recompiled](https://github.com/sp00nznet/gb-recompiled) can be far more rigorous
+than N64Recomp, because the SM83 has no pipeline, no out-of-order execution and no
+caches. Same input, same trace, every time.
 
-1. Use BGB's debugger to generate an instruction-level trace.
-2. The recompiled code generates a matching trace format.
-3. Diff the traces to find any divergence.
-4. Fix and re-verify.
+Its mechanism is **ground-truth capture**: run the ROM under PyBoy, log every
+`(bank, PC)` that actually executes (`tools/capture_ground_truth.py`), and use that
+record two ways -- as entry points to seed the recompiler (`--use-trace`), and as a
+coverage audit to see exactly which executed instructions your build never lifted. The
+recompiled binary emits a matching trace with `--trace-entries`, so the two are
+directly diffable.
 
-The Game Boy's deterministic timing (no pipeline, no out-of-order execution, no caches) makes instruction-level comparison feasible. Every instruction takes a known number of cycles, and the same input always produces the same execution trace.
+The general principle is worth more than the tooling: **a single real playthrough is a
+better specification than any static analysis.** Capture it once, keep it forever, diff
+against it on every change.
+
+### mariopaint -- differential testing you can drive from the command line
+
+Before the deep case study, the cheapest version of this idea. Module 11's
+[mariopaint](https://github.com/sp00nznet/mariopaint) runs recompiled functions on top of
+a LakeSnes host, and exposes two environment variables:
+
+| Variable | Effect |
+|---|---|
+| `MP_REALFRAME=1` | run the genuine ROM through LakeSnes's cycle-accurate frame, no recompiled code at all |
+| `MP_INTERP_FUNCS="018000,0087EE"` | hand *specific* recompiled functions back to the interpreter |
+
+The first is a ground-truth oracle: *"capture the same frame both ways and diff."* The
+second is a per-function A/B switch -- its own comment calls it the lever for *"is our
+translation of X wrong? Run it interpreted and see if the symptom goes away."*
+
+Note what this costs to build. `MP_INTERP_FUNCS` works by registering `NULL` at an
+address so the dispatch lookup misses and falls through to the original code. That is a
+few lines, it needs no rebuild, and it converts "something in our 8,000 lines is wrong"
+into a bisection you can run from a shell.
+
+If your design has an interpreter or an emulator anywhere in it, **you already have an
+oracle** -- you just have to expose the switch. Do it early. The next section shows what
+it costs to debug without one.
+
+### encarta -- the best-documented debugging campaign in the corpus
+
+Read the commit history of [encarta](https://github.com/sp00nznet/encarta), especially
+the run of commits prefixed `IR32:` in August 2026. It is a day-by-day account of
+statically recompiling the **Indeo 3 video codec** (a 16-bit NE DLL) until it produced
+byte-exact output, and it demonstrates almost every technique in this module under real
+conditions.
+
+**Build an oracle before you build the lifter.** The first commits in the whole project
+are not lifting work -- they are `DECO_32 oracle: perfect FTC color decode + golden
+trace harness`. The original DLL is loaded and driven directly to produce known-correct
+output, *then* the recompiled version is checked against it. You cannot differentially
+test without a reference, and the reference you want is the original binary running,
+not your beliefs about it.
+
+**Validate the lifter on something tiny first.** `Add automated x86->C lifter (lift.py),
+validated on VLC reader` -- a single bitstream-reader function. Prove the lifter on one
+function you can check by hand before pointing it at 7,326.
+
+**Bisect the lifted set.** The single most transferable trick in the log:
+
+> `Add LIFT_LO/LIFT_HI: bisect the lifted set to find a bad lift`
+
+When the program misbehaves and you have thousands of lifted functions, you do not read
+generated code looking for the bug. You add a range filter so that functions inside
+`[LIFT_LO, LIFT_HI]` run lifted and everything else runs as the original, then binary
+search the range. `git bisect`, applied to the address space. Roughly a dozen runs
+isolates one bad function out of thousands.
+
+**Add tripwires for silent corruption.** `R2L_HEAPCHECK diagnostic (HeapValidate after
+each real->lifted call)` -- if a lifted function corrupts the heap, you find out at the
+call that did it, not three minutes later in an unrelated allocator.
+
+**Stop failures from being silent.** Two commit titles, both of which are the same bug
+class:
+
+> `stop reporting unhandled as zero`
+> `stop trusting the linear sweep`
+> `the decode core is 32-bit; measure bitness instead of guessing`
+
+Returning zero for an unhandled case makes a broken decoder look like a working one that
+produces black frames. Any time your harness has a default, ask what it is hiding.
+
+**Be willing to retract.** This is the commit to internalize:
+
+> `IR32: the lifted codec decodes - and the output format was the wrong question`
+> `IR32: retract "it decodes" - the buffers were copies of its own code`
+
+The project publicly announced a working decoder and then publicly took it back one
+commit later, having discovered the "decoded output" was the codec's own code segment
+copied into the buffer. Every recompilation project produces a false victory like this,
+usually because you are checking that *something* got written rather than that the
+*right thing* got written. Write the retraction. The alternative is building three more
+weeks on top of a result you already half-suspect.
+
+**Then the bugs it found**, each of which is a category you will meet again:
+
+| Commit | The class of bug |
+|---|---|
+| `string ops had no segment base; the fault is a far pointer used flat` | segmentation dropped during lifting |
+| `16-bit addresses wrap, they do not sign-extend` | wrong-width arithmetic semantics |
+| `carry the caller's registers across the bridge` | ABI mismatch at the lifted/native boundary |
+| `KERNEL.197 was skewing the caller's stack` | a shim with the wrong stack purge |
+| `the decode thunk writes pixels over its own plane table` | correct code, wrong memory layout |
+| `__AHINCR was never patched` | an unresolved loader fixup, found last |
+
+Note where differential testing enters: *after* a week of symptom-chasing.
+`differential-test the lifted code against real x86` and then `differential-test the
+16-bit half too; instruction semantics are clean` is the moment the search space
+collapses -- it proved the lifter was correct, which meant the bug had to be in
+addressing and memory layout. **Use differential testing to eliminate a whole layer,
+not just to find one bug.**
+
+The end state is stated precisely, which is the other thing to copy: not "it works" but
+`the recompiled Indeo 3 decoder is byte-exact - 64 of 64 frames`, preceded by the
+partial result `100% byte-exact over 168 of 216 columns`. And later, a commit called
+`One command that re-checks everything that works` -- if re-verifying your claims is not
+one command, the claims will rot.
 
 ### Testing Strategy by Target Complexity
 

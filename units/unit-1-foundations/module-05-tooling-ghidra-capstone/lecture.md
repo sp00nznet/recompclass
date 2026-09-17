@@ -703,7 +703,7 @@ flowchart TD
 Auto-analysis can take anywhere from seconds (Game Boy ROMs) to hours (large Xbox 360 executables). For a typical N64 game ROM (8-16 MB), expect a few minutes.
 
 What auto-analysis finds:
-- **Functions**: Ghidra identifies function boundaries by following calls and recognizing prologue patterns. It typically finds 80-95% of functions automatically.
+- **Functions**: Ghidra identifies function boundaries by following calls and recognizing prologue patterns. How complete that is varies wildly by target -- do not plan around a percentage, measure it on your binary (see below).
 - **Cross-references**: Every branch, call, load, and store that references a known address is tracked.
 - **Data types**: Ghidra infers basic types (int, float, pointer) from how values are used.
 - **Strings**: ASCII and Unicode strings are automatically identified and labeled.
@@ -850,7 +850,14 @@ Ghidra's auto-analysis finds most functions, but not all. For recompilation, you
 3. **Look for uncategorized code**: Navigate to code regions that are not inside any function. Right-click and select "Create Function" to manually define them.
 4. **Check for functions reached only via indirect calls**: Look for function-pointer tables, vtables, and jump tables. The code at those target addresses may not have been identified as functions.
 
-For N64 games, Ghidra typically finds 80-90% of functions automatically. The remaining 10-20% are reached through function pointers (common in object-oriented game code that uses vtables for actor update functions).
+Resist the urge to think in percentages here. The number that governs your schedule is not "what fraction did the tool find" -- it is **how many addresses you have to supply by hand before the build is clean**, and that number is not proportional to anything.
+
+Two real Xbox 360 bring-ups, same toolchain, same week:
+
+- [ydkj](https://github.com/sp00nznet/ydkj) -- 14,781 functions, **1** hand-written hint.
+- [civrev](https://github.com/sp00nznet/civrev) -- 40,067 functions, **24** hints, and the first attempt used 301 and was *worse* for it.
+
+Whatever the tool missed, what mattered was which handful of addresses were load-bearing. Functions reached only through function pointers -- vtable slots for actor update methods, state-machine transitions, resource-loader callbacks -- are where those addresses hide, which is why Module 14 is a whole module.
 
 ### Cross-References for Understanding Call Graphs
 
@@ -1454,17 +1461,34 @@ This works because the N64 ecosystem has mature reverse engineering. For less-st
 
 ### Real-World Example: How gb-recompiled Does It
 
-gb-recompiled by arcanite24 takes yet another approach suited to the Game Boy:
+[gb-recompiled](https://github.com/sp00nznet/gb-recompiled) (a fork of
+[arcanite24](https://github.com/arcanite24)'s project) takes a different approach,
+suited to the Game Boy:
 
-1. **It uses a custom SM83 disassembler** (Capstone does not support SM83).
+1. **A custom SM83 disassembler.** Capstone does not support SM83, so there was no
+   choice. This is worth knowing before you plan a project around Capstone -- check
+   that your ISA is actually in it.
 
-2. **It performs recursive descent disassembly** from known entry points (the reset vector at `0x0100`, interrupt vectors, and identified function entry points).
+2. **Recursive descent from known entry points** -- the reset vector at `0x0100`, the
+   interrupt vectors, and every function entry discovered along the way.
 
-3. **It handles bank switching** by tracking which ROM bank is active at each call site, resolving cross-bank function references.
+3. **Bank tracking.** `recompiler/src/bank_tracker.cpp` follows which ROM bank is
+   active at each call site so cross-bank references resolve to the right target.
 
-4. **For the hard problem of JP HL** (indirect jumps), it uses trace-guided analysis: run the game in an emulator, record what addresses HL takes at each JP HL site, and feed that information to the recompiler. This is a clever hybrid of static and dynamic analysis.
+4. **A static solver first, a trace second.** For `JP HL` / `CALL HL` it tracks
+   register contents through the control flow and backtracks for page-aligned jump
+   tables, which gets above 98% code discovery on the hard cases unaided. Only when
+   that is not enough does it fall back to running the ROM under PyBoy, logging every
+   executed `(bank, PC)`, and feeding those back as entry points.
 
-5. **It does not rely on Ghidra** for analysis because Game Boy ROMs are small enough and simple enough that a custom analyzer covers the needs.
+5. **An IR between disassembly and output.** `recompiler/include/recompiler/ir/`
+   defines an SM83-shaped opcode set with constant-propagation and dead-code passes,
+   and the C emitter reads the IR rather than the instruction stream. Module 7 goes
+   into whether that is worth building.
+
+6. **No Ghidra.** Game Boy ROMs are small enough that a purpose-built analyzer covers
+   the need, and a custom analyzer you control beats a general one you have to argue
+   with.
 
 The lesson: there is no single "right" workflow. The tools and approach depend on your target architecture, the available prior reverse engineering, and the complexity of the binary.
 

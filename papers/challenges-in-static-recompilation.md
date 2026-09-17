@@ -4,7 +4,7 @@
 
 *Draft — March 2026*
 
-*Based on technical analysis of the sp00nznet recompilation project ecosystem: gb-recompiled, snesrecomp, gbarecomp, pcrecomp, gcrecomp, dcrecomp, xboxrecomp, ps3recomp, 360tools, MidwayRecomp, neogeorecomp, and their associated game-specific projects (flow, burnout3, crazytaxi, mk, racer, Rampage, mariopaint, ww).*
+*Based on technical analysis of the sp00nznet recompilation project ecosystem: gb-recompiled, snesrecomp, gbarecomp, pcrecomp, gcrecomp, dcrecomp, xboxrecomp, ps3recomp, MidwayRecomp, neogeorecomp, and their associated game-specific projects (flow, burnout3, crazytaxi, mk, racer, Rampage, mariopaint, ww).*
 
 ---
 
@@ -329,7 +329,6 @@ Static recompilation is not a solved problem. It is a solvable one — given suf
 | dcrecomp | SH-4 | 11,000+ | Framework, crazytaxi/kingofbeetle in progress |
 | xboxrecomp | x86-32 | 22,097 (burnout3) | Framework + burnout3 port |
 | ps3recomp | Cell PPE+SPU | 91,758 (flow) | Framework + flow port |
-| 360tools | Xenon PPC | Varies | Analysis utilities |
 | MidwayRecomp | MIPS-IV | Varies | Arcade hardware toolkit |
 | neogeorecomp | 68000 | Varies | Runtime library |
 | mk | 65816 | Complete | Super Mario Kart (SNES → native) |

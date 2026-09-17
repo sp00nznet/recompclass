@@ -1127,22 +1127,40 @@ Key takeaways from N64Recomp's approach:
 - **Heavy use of vendored dependencies.** ELFIO and rabbitizer are included directly rather than found via find_package.
 - **The runtime is the bulk of the code.** The RT64 graphics runtime alone is larger than the recompiler.
 
-### gcrecomp (GameCube Recompiler)
+### [gcrecomp](https://github.com/sp00nznet/gcrecomp) (GameCube Recompiler)
 
-gcrecomp follows a similar pattern: the recompiler tool is separate from any specific game's runtime. The build system:
+gcrecomp follows the same split, and its layout is worth copying because it is organised
+by **subsystem**, not by compiler phase:
 
 ```
 gcrecomp/
 ├── CMakeLists.txt
-├── src/
-│   ├── recompiler/          # The recompilation engine
-│   ├── analysis/            # Binary analysis passes
-│   └── codegen/             # C code generation
 ├── include/
-└── third_party/
-    ├── capstone/            # Disassembly library
-    └── fmt/                 # Formatting library
+├── docs/
+├── tools/
+└── src/
+    ├── gx/          # GameCube GPU -> D3D11, TEV stage translation
+    ├── audio/       # DSP ADPCM decode, voice mixing
+    ├── input/       # controller mapping
+    ├── os/          # Dolphin OS HLE: heap, DVD, threads, timing
+    ├── runtime/     # the glue the recompiled code links against
+    └── example/     # a worked example project
 ```
+
+Two things to take from that tree.
+
+**There is no `codegen/` or `analysis/` directory, and that is not an oversight.** Almost
+all of this repository is runtime. The parts of a recompilation toolkit that feel like
+the interesting engineering -- the disassembler, the lifter, the emitter -- are a
+minority of the code by a wide margin. Module 15 argues this; the directory listing
+proves it.
+
+**`example/` is load-bearing.** A toolkit with a worked example in the tree is one
+somebody else can actually adopt. Compare
+[xboxrecomp](https://github.com/sp00nznet/xboxrecomp), which carries `templates/`,
+`tests/`, `tools/`, a `Dockerfile` and 25 files of `docs/` alongside `src/`. That is what
+"reusable" costs, and it is mostly not the recompiler.
+
 
 GameCube recompilation targets PowerPC, which means the generated code uses a different calling convention and register set than the N64's MIPS. The build system handles this by letting the code generator produce C that is portable across host architectures.
 

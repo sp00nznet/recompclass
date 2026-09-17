@@ -396,7 +396,7 @@ SSE scalar operations are much easier to recompile than x87 because they use nam
 
 ## 4. MIPS Assembly Reading
 
-MIPS is arguably the cleanest ISA you will work with. It was designed from the ground up as a RISC architecture with a small, regular instruction set. The N64 uses MIPS III (VR4300), and the PS2 uses a MIPS R5900 variant. Both are common recompilation targets -- N64Recomp handles the N64 side, and PS2Recomp by ran-j targets the PS2.
+MIPS is arguably the cleanest ISA you will work with. It was designed from the ground up as a RISC architecture with a small, regular instruction set. The N64 uses MIPS III (VR4300), and the PS2 uses a MIPS R5900 variant. Both are common recompilation targets -- N64Recomp handles the N64 side, and [PS2Recomp](https://github.com/ran-j/PS2Recomp) by ran-j targets the PS2 (there is a [fork](https://github.com/sp00nznet/PS2Recomp) used for the ports in this course).
 
 ### Register Conventions
 
@@ -839,7 +839,17 @@ JP [HL]              ; Jump to address in HL (indirect jump)
 RST 0x38             ; Push PC, jump to fixed address (one of 8 vectors)
 ```
 
-`JP [HL]` (sometimes written `JP HL` in some assembler syntaxes) is an indirect jump that is the bane of SM83 static recompilation. The target address is computed at runtime from the HL register, so the recompiler cannot know statically where it goes. gb-recompiled by arcanite24 implements a sophisticated static solver for this instruction, analyzing what values HL can hold at each JP HL site. The approach uses trace-guided analysis -- running the game in an emulator, recording what addresses HL takes at each JP HL, and feeding that information back to the recompiler. This gets you 98.9% coverage across the Game Boy library.
+`JP [HL]` (sometimes written `JP HL` in some assembler syntaxes) is an indirect jump that is the bane of SM83 static recompilation. The target address is computed at runtime from the HL register, so the recompiler cannot know statically where it goes. [gb-recompiled](https://github.com/sp00nznet/gb-recompiled) implements a static solver for this instruction: it tracks the contents of all 8-bit registers and 16-bit pairs through the control flow, and where `HL` is still unknown at a `JP HL` site it backtracks looking for jump-table patterns -- page-aligned runs of pointers -- and adds every entry it finds as a branch target.
+
+Three different numbers get quoted about this project, and they mean different things. Keep them straight:
+
+| Number | What it actually measures |
+|---|---|
+| **98.94%** (1,592 / 1,609 ROMs) | the recompiler produced C that **compiled**. The README's next words are *"most of the games are not fully playable yet."* |
+| **>98% code discovery** | the static `JP HL` solver found that share of the code on Pokémon-class RPGs, with no dynamic trace |
+| trace-guided recompilation | the **fallback** when the solver is not enough: run the ROM under PyBoy, log every `(bank, PC)` that actually executed, feed it back via `--use-trace` |
+
+Static solving and trace seeding are alternatives, not the same technique, and "it compiled" is not "it runs." Getting those three conflated is the most common way people overstate how solved this problem is.
 
 The `RST` instructions are single-byte calls to fixed addresses: `0x00`, `0x08`, `0x10`, `0x18`, `0x20`, `0x28`, `0x30`, `0x38`. They are fast calls (one byte smaller and faster than a full `CALL`) used for frequently-called routines.
 
@@ -927,7 +937,7 @@ void z80_exx(Z80Context *ctx) {
 
 ## 7. PowerPC Assembly Reading
 
-PowerPC is used in the GameCube (Gekko), Wii (Broadway), and Xbox 360 (Xenon). XenonRecomp by Skyth handles Xbox 360 titles, and sp00nznet's gcrecomp targets GameCube. PowerPC is a clean RISC design, but its condition register system takes some getting used to.
+PowerPC is used in the GameCube (Gekko), Wii (Broadway), and Xbox 360 (Xenon). XenonRecomp by Skyth handles Xbox 360 titles, [gcrecomp](https://github.com/sp00nznet/gcrecomp) targets GameCube, and [model3recomp](https://github.com/sp00nznet/model3recomp) targets the PowerPC 603e in Sega's Model 3 arcade board. PowerPC is a clean RISC design, but its condition register system takes some getting used to.
 
 ### Register Set
 

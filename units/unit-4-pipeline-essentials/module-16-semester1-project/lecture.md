@@ -70,7 +70,7 @@ You have five options, and each has genuine tradeoffs. There is no objectively "
 
 **Pros:**
 - The simplest instruction set you have worked with. 8-bit registers, no complex addressing modes, no variable-width operands.
-- The most complete tooling ecosystem. Ghidra has excellent SM83 support. Pan Docs is comprehensive. gb-recompiled by Matt Currie exists as a reference implementation you can study (but not copy from -- you learn by building, not by reading someone else's solution).
+- The most complete tooling ecosystem. Ghidra has excellent SM83 support. Pan Docs is comprehensive. [gb-recompiled](https://github.com/sp00nznet/gb-recompiled) exists as a reference implementation you can study (but not copy from -- you learn by building, not by reading someone else's solution).
 - Small address space (64KB) means your memory shims are trivial -- a flat array with MMIO dispatch.
 - The lab from Module 9 already gave you a working disassembler and partial lifter. You are not starting from zero.
 - The ROM format is simple: 32KB fixed bank + switchable banks, header at 0x0100-0x014F.
@@ -165,6 +165,41 @@ You have five options, and each has genuine tradeoffs. There is no objectively "
 | Recommended for first project | Yes | Yes | With caution | Yes | With caution |
 
 If you are unsure, pick Game Boy. It has the shortest path to a working result, the most reference material, and the most forgiving architecture. There is no shame in starting easy -- the point is to complete the pipeline, not to impress anyone with your target choice.
+
+---
+
+### Pick your target for what it is *missing*
+
+The most useful selection advice in the whole corpus is not "pick something small." It is
+in the README of [missileattack](https://github.com/sp00nznet/missileattack), a 1992
+Win16 game chosen deliberately as a fixture:
+
+```
+MISSILE.EXE   87,360 bytes   NE, 2 segments (1 CODE, 1 DATA), 20,975 bytes of code
+```
+
+> **One code segment. Twenty-one kilobytes.** Every other NE project here -- El-Fish
+> (121 segments), Bang! Bang!, Microsoft Bob, Catz, The Even More Incredible Machine
+> (34 segments) -- has segmentation as a first-class problem. This one does not have
+> segmentation at all.
+
+Pick a first target that is **missing the hardest problem on your platform**, so you can
+build and validate everything else against something where that problem cannot be
+confusing you. Then add the hard problem back with the rest already known-good.
+
+For a Game Boy project that means: no MBC (or MBC1 only), no `JP HL`, no interrupt-driven
+audio tricks. A boring homebrew ROM is a better mini-project than a beloved commercial
+game, and you will finish it.
+
+The corpus has a whole pattern of this -- each toolkit's first port is chosen to be the
+smallest honest instance of the platform:
+[chipschallenge-lynx-recomp](https://github.com/sp00nznet/chipschallenge-lynx-recomp),
+[blockdude-ti-recomp](https://github.com/sp00nznet/blockdude-ti-recomp),
+[manicminer-zx-recomp](https://github.com/sp00nznet/manicminer-zx-recomp),
+[jellymonsters-vic20-recomp](https://github.com/sp00nznet/jellymonsters-vic20-recomp),
+[newtris-newton-recomp](https://github.com/sp00nznet/newtris-newton-recomp),
+[pacman-arcade-recomp](https://github.com/sp00nznet/pacman-arcade-recomp). Read one
+before you start.
 
 ---
 

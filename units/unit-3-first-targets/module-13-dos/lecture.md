@@ -362,15 +362,71 @@ The runtime uses SDL2's timer facilities or a high-resolution system clock to fi
 
 ## 7. Real-World Reference
 
-**civ** by sp00nznet is a static recompilation of *Sid Meier's Civilization* for DOS. This project demonstrates handling a complex DOS application with extensive INT 21h file I/O, multiple video modes (text mode for menus, Mode 13h for the map), mouse input, and timer-driven game logic. It illustrates how the full set of DOS service shims comes together to support a real program.
+The PC family is the largest and messiest corner of this corpus, because "PC" is not
+one target -- it is MZ real-mode DOS, 16-bit NE Windows, LE/LX DOS extenders, and Win32
+PE, each with different segmentation and a different OS surface.
 
-**encarta** by sp00nznet recompiles portions of *Microsoft Encarta*, showcasing how static recompilation can preserve educational software. This project involves complex file I/O patterns, multimedia playback, and extensive text rendering.
+### [pcrecomp](https://github.com/sp00nznet/pcrecomp) -- the shared toolbox
 
-**pcrecomp** by sp00nznet is a general-purpose DOS recompilation toolkit. It implements the MZ parser, x86-16 disassembler and lifter, and the full runtime with SDL2 hardware abstraction. It serves as the foundation for game-specific DOS recompilation projects and demonstrates the complete pipeline described in this module.
+Positioned as *"the unified toolbox for tearing apart old PC software and putting it
+back together, better"* -- the accumulated tools from every PC project in one repo, so
+the next dusty `.exe` starts from something.
 
-These projects show that DOS static recompilation is practical for real-world software. The segmented memory model and interrupt-based API add complexity compared to console targets, but the underlying pipeline is the same: parse the binary, disassemble the code, lift instructions to C, and provide a runtime that replaces the original hardware.
+Note what is in `tools/pe/`, because it is not what a textbook would list: import and
+export analysis, section hashes, delay-import handling, **protection and DRM
+detection**, a recursive binary catalog that names NE/LE/MZ files *"instead of calling
+them broken,"* and `stdcall_argc.py`, which derives each import's stack purge from the
+SDK headers.
 
----
+That last one is quietly important and this module glossed it. If you do not know how
+many bytes a `stdcall` import pops, every call through it corrupts the stack -- and you
+cannot read that off the binary, because it is a property of the *callee* that lives in
+somebody's SDK. Deriving it mechanically beats getting it wrong 400 times.
+
+### [missileattack](https://github.com/sp00nznet/missileattack) -- choose a fixture by what it lacks
+
+*Missile Attack!* (1992) is the best first-target selection argument in the corpus, and
+the README says so outright: *"the smallest complete Win16 game in the collection, and
+that is the whole point of it."*
+
+```
+MISSILE.EXE   87,360 bytes   NE, Microsoft linker 5.14, Windows, PROTMODE
+              2 segments (1 CODE, 1 DATA), 20,975 bytes of code
+              165 relocations -- 152 of them imports, 13 internal
+              imports: MMSYSTEM, win87em, KERNEL, GDI, USER
+```
+
+**One code segment. Twenty-one kilobytes.** Every other NE project in the collection --
+El-Fish at 121 segments, The Even More Incredible Machine at 34, Bang! Bang!, Catz --
+has segmentation as a first-class problem. This one does not have segmentation *at
+all*.
+
+That is the selection criterion, and it is not "pick something small." It is **pick
+something that is missing the hardest problem on the platform**, so you can build and
+validate the rest of the pipeline against a target where that problem cannot be
+confusing you. Then add it back with everything else already known-good. A 21 KB
+program with one segment is worth more as a first fixture than a beloved game with 121.
+
+### [bolo](https://github.com/sp00nznet/bolo) -- a finished small DOS game
+
+*Bolo Adventures III* (Soleau Software, 1993), 16-bit EGA/VGA DOS, taken to native code.
+*"No DOSBox. No emulator."* A grid puzzle game is a good shape for this: deterministic
+logic, no timing-critical rendering, a small INT 10h and INT 21h surface. If you want
+one complete DOS example to read end to end, read this one.
+
+### [civ](https://github.com/sp00nznet/civ) -- a complex DOS application
+
+*Sid Meier's Civilization* (1991) exercises the whole DOS shim set at once: extensive
+INT 21h file I/O, text mode for menus alongside Mode 13h for the map, mouse input, and
+timer-driven logic. It is what the full set of shims in this module is for.
+
+### [encarta](https://github.com/sp00nznet/encarta) -- the one to read the commit log of
+
+*Microsoft Encarta 97* is the most instructive project in the corpus for a reason that
+has nothing to do with DOS, and Module 18 uses it in detail: its commit history is a
+complete, day-by-day account of recompiling a 16-bit video codec, including an explicit
+public retraction of a result that turned out to be wrong. Come back to it after
+Module 18.
 
 ## Lab
 

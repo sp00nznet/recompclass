@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Build output
+build/
+build-*/
+out/
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.lib
+
+# Lab artifacts students generate
+labs/**/*.gb
+labs/**/*.nes
+labs/**/*.z64
+labs/**/*.iso
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

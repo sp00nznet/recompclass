@@ -66,15 +66,28 @@ Contribute a meaningful HLE module implementation or runtime component to an exi
 4. Write tests that verify your implementation
 5. Submit your work as a pull request to the project
 
-**Suggested targets:**
+**Suggested targets.** These are real, currently-open gaps, taken from
+[ps3recomp's `docs/MODULE_STATUS.md`](https://github.com/sp00nznet/ps3recomp/blob/main/docs/MODULE_STATUS.md),
+which tracks every HLE module as Not Started / Stubbed / Partial / Complete. **Check that
+file before you start** -- this table is a snapshot and the whole point of it is that it
+moves.
 
-| Project | Module/Component | Complexity |
-|---|---|---|
-| ps3recomp | Unimplemented cellFs functions | Medium |
-| ps3recomp | cellSync / cellSync2 primitives | Medium-High |
-| ps3recomp | cellPngDec / cellJpgDec | Medium |
-| N64Recomp | GX runtime function gaps | Medium |
-| Any recomp project | Audio subsystem improvements | Medium-High |
+| Project | Gap | Why it is open | Complexity |
+|---|---|---|---|
+| ps3recomp | **Vulkan RSX backend** | D3D12 renders real titles and Metal covers macOS; Vulkan is unwritten, and it is what Linux and Android need | High, very high value |
+| ps3recomp | `cellVdec` | callbacks and AU submission work, there is no actual H.264/MPEG-2 decode -- needs FFmpeg wiring | Medium |
+| ps3recomp | `cellAdec` | same shape: AAC/ATRAC3+ decode missing behind working plumbing | Medium |
+| ps3recomp | `cellSpurs` | management APIs, workloads, tasksets and event flags are real; **no actual SPU execution** | High |
+| Any toolkit | the `docs/` directory | most of these repos are under-documented relative to what they do | Low, underrated |
+
+Note the shape of three of those: **the plumbing is done and the payload is missing.**
+`cellVdec` correctly sequences callbacks and hands back picture items -- it just never
+decodes a frame. That is a genuinely good contribution shape, because the interface is
+already pinned down by a working caller and you can tell immediately whether your
+implementation is right.
+
+The Vulkan backend is the one to take if you want your work used. "Linux and Android
+cannot run any of this" is a real limitation with a named cause.
 
 **What makes a good contribution:**
 
@@ -275,7 +288,7 @@ The sp00nznet repositories remain your best reference for how production-quality
 - **[gb-recompiled](https://github.com/arcanite24/gb-recompiled)** by arcanite24 (Brandon G. Neri): Game Boy static recompiler with advanced indirect jump resolution.
 - **[RexGlueSDK](https://github.com/rexglue/rexglue-sdk)** by tomcl7: Xbox 360 recompilation runtime with growing documentation.
 - **[Gilgamesh](https://github.com/AndreaOrru/gilgamesh)** by Andrea Orru: SNES reverse engineering and recompilation toolkit.
-- **ps3recomp**: The most ambitious recompilation target currently under active development. Contributing here means working at the frontier of what static recompilation can do.
+- **[ps3recomp](https://github.com/sp00nznet/ps3recomp)**: the most ambitious target under active development, and the most honest about its own state -- start at `docs/MODULE_STATUS.md` and `docs/GAME_PORTING_GUIDE.md`. Contributing here means working at the frontier of what static recompilation can do.
 - **Decomp projects** (e.g., SM64, OoT, TWW): While decompilation is a different discipline, the communities overlap significantly and the reverse engineering skills transfer directly.
 - **[ReadOnlyMemo](https://readonlymemo.com/decompilation-projects-and-n64-recompiled-list/)** maintains an updated list of decompilation and recompilation projects across all platforms.
 

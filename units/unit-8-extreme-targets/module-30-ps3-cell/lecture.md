@@ -681,6 +681,106 @@ But the architecture is the same one you have been learning throughout this cour
 
 ---
 
+## 11. Real-World Reference
+
+The PS3 corpus is the place to see how far this gets and where it stops.
+
+### [ps3recomp](https://github.com/sp00nznet/ps3recomp) -- the runtime
+
+The HLE runtime libraries, system stubs and analysis tools that everything below links
+against. It is the largest project in the corpus by commit count, which is itself the
+lesson of this module: on the PS3 the recompiler is not the work, **the operating
+system is the work.**
+
+### [flow](https://github.com/sp00nznet/flow) -- the furthest along
+
+thatgamecompany's *flOw* (2007, PhyreEngine, `NPUA80001`), renders levels natively
+through a D3D12 backend.
+
+| | |
+|---|---|
+| Functions recompiled and lifted | **102,056** (100%) |
+| Trampoline sites | 22,000 converted fallthroughs, **143,000 drain sites** |
+| Imported functions | 140 / 140 resolved |
+| Imported libraries | 12, with 7 backed by real HLE bridges |
+| Size | ~10 MB ELF → ~45 MB executable |
+
+The interesting move is what happened when HLE stubs were not enough. flOw's
+`cellSpurs`/`cellSync` calls were hanging on an unresolved-PRX spin, and the fix was not
+to write better stubs -- it was to **decrypt Sony's real `libsre.prx` and statically
+recompile that too**, relocated, lifted and namespaced alongside the game.
+
+Generalise it: when a shim for a system library gets hard enough, recompiling the actual
+library is a legitimate option, and sometimes the cheaper one. The library is just
+another binary. You already have a tool that turns binaries into C.
+
+### [tokyojungle](https://github.com/sp00nznet/tokyojungle) -- the first 3D attempt, and a corrected number
+
+*Tokyo Jungle* (2012) -- a digital-only PS3 exclusive whose developers are both gone and
+whose storefront is dying, which is the preservation argument in its purest form.
+
+It boots end to end, opens a D3D12 window, runs the PSN data-install flow, brings up
+SPURS and all twelve of its SPU job images, loads its game data, completes audio
+initialisation, and gets its own clear colour to the screen. It does not draw geometry;
+it parks in its main loop waiting on a counter nothing writes.
+
+And then this, in the README, unprompted:
+
+> **A note on the function count.** Earlier builds advertised *35,208 lifted functions*.
+> That number was wrong, and the current one is lower on purpose: `find_functions` was
+> treating intra-function basic blocks as separate functions.
+
+A headline metric was revised **downward** because the definition behind it was wrong.
+Function counts are the number every recompilation project leads with, and they are
+trivially inflatable -- split a function at every branch target and your total balloons
+while the work does not change. Compare with the xboxdashboard retraction in Module 27:
+same instinct, different metric. If your numbers only ever go up, check how you are
+counting.
+
+### [ducktales](https://github.com/sp00nznet/ducktales) -- scale, and a debugging trick
+
+*DuckTales: Remastered* (`BLUS31368`), chosen after flOw specifically as an easier
+target: a small custom 2D engine instead of a gated PhyreEngine boot.
+
+Discovery found 36,717 functions in the OPD table; call-target analysis found roughly
+13,000 more, for **50,077 lifted**. That produced about **2 GB of generated C++** and a
+**1.65 GB native executable**. All 239 firmware NIDs are wired. It runs its own C++
+global constructors, reaches `cellGameBootCheck`, initialises TLS and creates real
+threads, and then spins in the CRT allocator's free-list walk because no heap was ever
+brought up.
+
+Steal the diagnostic it used to find that:
+
+> A built-in **spin watchdog** periodically samples the main thread's PC and resolves it
+> to a guest function, so a silent hang becomes a named address to chase.
+
+A hang in a 50,000-function recompiled binary is otherwise unfalsifiable -- the process
+is alive, nothing is logged, and you have no idea where it is. Sampling the PC and
+resolving it through your own symbol table converts that into `func_009653C0` and a
+name. It is perhaps thirty lines. Write it before you need it.
+
+### The rest of the PS3 family
+
+[twistedmetal](https://github.com/sp00nznet/twistedmetal),
+[GT5P](https://github.com/sp00nznet/GT5P),
+[vf5](https://github.com/sp00nznet/vf5),
+[saintsrow2](https://github.com/sp00nznet/saintsrow2),
+[shadowofthecolossus](https://github.com/sp00nznet/shadowofthecolossus),
+[scottpilgrim](https://github.com/sp00nznet/scottpilgrim),
+[youdontknowjack](https://github.com/sp00nznet/youdontknowjack),
+[simpsonsarcade-ps3](https://github.com/sp00nznet/simpsonsarcade-ps3),
+[rampage-ps3](https://github.com/sp00nznet/rampage-ps3),
+[mua](https://github.com/sp00nznet/mua),
+[metalslug2](https://github.com/sp00nznet/metalslug2).
+
+Two of those are worth a second look for being *shells around other software* rather
+than games: `metalslug2` is a PS3 wrapper around a Neo Geo emulator, and
+[twistedmetal-psn](https://github.com/sp00nznet/twistedmetal-psn) recompiles the PS3
+firmware's own **PS1 emulator** (`ps1_netemu`) in order to run a PSOne Classic. You end
+up statically recompiling an emulator so that it can keep emulating. Sit with that one.
+
+---
+
 ## What Comes Next
 
 Labs 19 and 20 will put this knowledge into practice. Lab 19 focuses on SPU recompilation: you will recompile a small SPU program, implement DMA in your runtime, and verify correct execution. Lab 20 is a PPU + SPU integration exercise that brings both pipelines together with HLE stubs.

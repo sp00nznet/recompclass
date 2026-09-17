@@ -258,77 +258,135 @@ For asset extraction and modding workflows, separate tools decompress ROM data o
 
 ## 6. Real-World Projects
 
-sp00nznet has recompiled multiple N64 titles, each presenting different challenges and scale. These projects demonstrate the maturity and breadth of the N64 recompilation toolchain.
+All of these use [N64Recomp](https://github.com/N64Recomp/N64Recomp) with the
+N64ModernRuntime. They are at very different stages, which is the point of listing them
+together.
 
-### sfrush (San Francisco Rush)
+### [diddykongracing](https://github.com/sp00nznet/diddykongracing) -- furthest along, and the one with the best war story
 
-San Francisco Rush is an arcade racing game ported to the N64. Key characteristics:
+**1,956 recompiled functions** plus the `aspMain` RSP microcode. Reaches the Adventure
+mode overworld: full boot chain, menus, character select, cinematics, hub world, with an
+ImGui overlay, gamepad support, EEPROM 4K saves, and an HLE audio pipeline running all
+14 `aspMain` opcodes at 22,050 Hz.
 
-- **Approximately 3,200 functions** identified in the ROM
-- Heavy use of fixed-point arithmetic for physics (the game predates widespread floating-point confidence on N64)
-- Custom asset compression requiring per-game decompression support
-- Audio system uses a custom mixer rather than standard libultra audio
+Note one detail up front: **RT64 was removed from this build.** DKR uses the `f3ddkr`
+microcode, which RT64 does not support, so the project wrote a custom microcode
+interpreter and renders through a software framebuffer via SDL2. Your renderer choice is
+downstream of your game's microcode, not of your preferences.
 
-### diddykongracing
+**The anti-piracy problem, which nobody warns you about.** The retail ROM contains three
+DRM checks that read N64 hardware registers directly with `IO_READ`. On real hardware
+they read real registers and pass. In a recompilation those addresses map to
+uninitialised RDRAM, so **all three fail** -- and the symptoms look nothing like a DRM
+check:
 
-Diddy Kong Racing is a first-party Rare title with sophisticated engine technology for its era:
+| Check | Reads | Symptom when it fails |
+|---|---|---|
+| `drm_validate_dmem` | `SP_DMEM[0]` | sets `gDmemInvalid`, which triggers a **10-million-iteration busy loop every frame** |
+| `drm_validate_imem` | `SP_IMEM[0]` (CIC ID) | sets `sAntiPiracyTriggered`, which **forces the START button every frame** -- the game pauses itself constantly |
+| `render_scene` anti-tamper | `PIF_RAM[0x200]` | **every track renders mirrored** |
 
-- **Approximately 4,500 functions** -- larger than typical N64 games due to multiple game modes
-- Uses the Expansion Pak in some configurations, exercising TLB-mapped memory
-- Complex display list construction with multiple microcode modes
-- Heavy use of DMA for streaming assets during gameplay
+Sit with those symptoms. A game that runs at a tenth of the expected speed, or pauses
+itself, or draws the world backwards, reads as a catastrophic bug in your lifter,
+your scheduler, or your renderer. It is none of those. It is the game **working exactly
+as designed**, correctly detecting that it is not running on a real N64.
 
-### extremeg and racer
+The general lesson: commercial software from this era is full of environment checks --
+DRM, copy protection, dongle probes, hardware fingerprints -- and your recompilation is,
+by construction, an environment that fails every one of them. When a symptom is bizarre
+and global (everything mirrored, everything slow, input behaving on its own), check
+whether the program is *deliberately* sabotaging itself before you go looking for a bug
+you made.
 
-Extreme-G and Star Wars Episode I: Racer are high-speed racing games that stress different parts of the pipeline:
+### [racer](https://github.com/sp00nznet/racer) -- boots and runs, no decomp to lean on
 
-- **extremeg**: ~2,800 functions, aggressive use of the RSP for particle effects
-- **racer**: ~5,100 functions, one of the larger N64 codebases, complex track streaming system
+*Star Wars Episode I: Racer*. **878+ functions** discovered, roughly **120 libultra
+functions stubbed** and **25 reimplemented** for real. Boots to stable execution with
+RSP task routing, the VI/SI/timer event system wired, and thread scheduling working.
 
-### Rampage
+The README is blunt that there is no existing decompilation for this game -- "we're
+flying blind" -- which makes it the honest baseline for what a title without community
+symbols costs.
 
-Rampage: World Tour on N64 is a simpler game but illustrative of the baseline effort:
+One line in its status table is worth more than the rest: **"Split-Function Fallthrough
+Auto-Fix (143 funcs)."** Function discovery had split 143 real functions at internal
+branch targets, so the first half fell through into nothing. This is the same underlying
+error that inflated a PS3 project's function count in Module 30 and that the
+over-hinting trap produced in Module 14 -- **treating a basic block as a function** is
+the single most common discovery bug in this field, and it shows up differently every
+time: as a fallthrough, as a fatal unresolved call, or as a number in your README that
+is too high.
 
-- **Approximately 2,000 functions** -- on the smaller end for N64
-- Straightforward display list usage (F3DEX microcode)
-- Good first project for understanding the full pipeline
+### [Rampage](https://github.com/sp00nznet/Rampage) -- playable and invisible
+
+*Rampage: World Tour*, **3,736 functions**, all lifted. It boots with all four threads,
+runs the complete game state progression -- title, instructions, menus, character select,
+**gameplay** -- and the controls genuinely work: move, punch, kick, jump, climb
+buildings. It loads 50+ title-screen assets over PI DMA.
+
+And the screen is black, because the RSP task submission path is identified but the
+display list handoff to the scheduler is not connected.
+
+So the game is, in a strict sense, playable -- and you cannot see it. Hold onto that,
+because it is the cleanest possible illustration of the split this course keeps
+returning to: **the CPU side and the RCP side are separate projects.** Everything in
+this module can be finished and correct while nothing appears on screen. Modules 21 and
+29 are the other half.
+
+The repo also carries *Rampage 2: Universal Tour* at **4,788 functions** with 35 named
+OS function interceptors, 49 stubs, and 52 hardware-register functions in an ignore
+list -- a second title on the same runtime, which is where a toolkit starts paying off.
+
+### [pokemonsnap](https://github.com/sp00nznet/pokemonsnap) -- boots to the main loop
+
+Build and link done, RDRAM init, BSS clear, entrypoint, six OS threads, VI retrace,
+audio init, RSP audio tasks executing, dynamic overlay loading, and the scene manager
+main loop running. GFX display list submission in progress, RT64 not started.
+
+Note that **audio came up before graphics**, which is common and worth planning for: the
+audio RSP task path is simpler than the graphics one, so it is a good early proof that
+your RSP task routing works at all.
 
 ### Scale Summary
 
-| Project | Functions | Notable Challenge |
-|---|---|---|
-| sfrush | ~3,200 | Custom compression, fixed-point math |
-| diddykongracing | ~4,500 | TLB usage, multiple microcode modes |
-| extremeg | ~2,800 | RSP particle effects |
-| racer | ~5,100 | Large codebase, streaming assets |
-| Rampage | ~2,000 | Clean baseline project |
+Real counts from the projects above, with the metric that actually predicted effort:
 
-```mermaid
-flowchart TD
-    subgraph Scale["N64 Project Scale"]
-        direction TB
-        Small["Small\n~2,000 functions\nRampage"] --- Medium["Medium\n~3,000-4,500 functions\nsfrush, diddykongracing, extremeg"]
-        Medium --- Large["Large\n~5,000+ functions\nracer"]
-    end
+| Project | Functions | Generated C | Split-function fixes | Where it got to |
+|---|---|---|---|---|
+| [racer](https://github.com/sp00nznet/racer) | 878+ | -- | **143** | boots, stable execution, no decomp to lean on |
+| [diddykongracing](https://github.com/sp00nznet/diddykongracing) | 1,956 + `aspMain` | -- | -- | Adventure mode overworld, rendering, audio, saves |
+| [Rampage](https://github.com/sp00nznet/Rampage) (World Tour) | 3,736 | -- | **418** | gameplay + controls, black screen |
+| Rampage 2 (Universal Tour) | 4,788 | -- | ~**879** outstanding | second title on the same runtime |
+| [pokemonsnap](https://github.com/sp00nznet/pokemonsnap) | ~5,800 | ~573,000 lines | ~**390** | main loop, no graphics |
 
-    subgraph Challenges["Common Challenges"]
-        direction TB
-        C1["Delay Slot Handling"]
-        C2["Display List Translation"]
-        C3["Custom Compression"]
-        C4["Audio System Reimplementation"]
-    end
+### The column that matters: split functions
 
-    Scale -.-> Challenges
+Look down the fourth column. **Every single N64 project in this corpus had to fix
+hundreds of incorrectly split functions.** Not a few. Hundreds, scaling roughly with
+size.
 
-    style Small fill:#2f855a,stroke:#38a169,color:#fff
-    style Medium fill:#2b6cb0,stroke:#3182ce,color:#fff
-    style Large fill:#744210,stroke:#975a16,color:#fff
-    style C1 fill:#4a5568,stroke:#718096,color:#fff
-    style C2 fill:#4a5568,stroke:#718096,color:#fff
-    style C3 fill:#4a5568,stroke:#718096,color:#fff
-    style C4 fill:#4a5568,stroke:#718096,color:#fff
-```
+The cause is stated plainly in pokemonsnap's README: *"The N64Recomp tool incorrectly
+splits functions that lack standard prologues."* When discovery does not see a
+recognisable prologue, it treats an internal branch target as a new function -- so the
+"first half" runs off the end of its own body and falls through into nothing.
+
+This is worth internalising as a **property of the tool and the target**, not as a
+series of unrelated bugs:
+
+- It is systematic, so automate the fix. racer, Rampage and pokemonsnap all describe
+  *automated* fallthrough patching, not 400 hand edits.
+- It is detectable, because a function that ends without a return or a branch is
+  suspicious on its face. You can find these without running anything.
+- It is the same root cause as the inflated function count in Module 30 and the
+  over-hinting trap in Module 14. **Deciding what counts as a function is the hardest
+  unglamorous problem in this field**, and every symptom in this paragraph is a
+  different downstream face of getting it wrong.
+
+Rampage 2's honest note -- *"~879 potential 2-instruction fallthrough functions need
+systematic fixing"* -- is the right way to hold it: a known, counted, categorised debt
+rather than an unknown number of mystery crashes.
+
+
 
 ### Lessons Learned
 

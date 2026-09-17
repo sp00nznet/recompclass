@@ -8,6 +8,7 @@ display formatting used across multiple lab exercises.
 from capstone import Cs, CS_ARCH_X86, CS_ARCH_MIPS, CS_ARCH_PPC, CS_ARCH_ARM
 from capstone import CS_MODE_16, CS_MODE_32, CS_MODE_64, CS_MODE_MIPS32
 from capstone import CS_MODE_BIG_ENDIAN, CS_MODE_LITTLE_ENDIAN
+from capstone import CS_MODE_ARM, CS_MODE_THUMB
 import struct
 
 

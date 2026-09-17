@@ -247,7 +247,7 @@ These decompilation projects differ from static recompilation in a key way: deco
 
 N64Recomp's design philosophy is pragmatic: rather than trying to build a general emulator, it focuses on producing high-quality native ports of individual titles. Each MIPS instruction is translated literally into C, and the host compiler optimizes the result. Wiseguy has noted that an experienced developer can set up a new N64 title for recompilation in roughly two days using the toolchain.
 
-The graphics side is handled by **[RT64](https://github.com/rt64/rt64)**, created by **Dario Samo** (@dariosamo). RT64 is a modern rendering backend that translates N64 display lists into D3D12/Vulkan/Metal draw calls using ubershaders to eliminate pipeline compilation stutters. It started as a ray-tracing mod for Super Mario 64 and evolved into a general-purpose N64 renderer with accuracy-first design -- no per-game hacks. Wiseguy and Dario discussed their collaboration and design philosophy in a [Software Engineering Daily interview (Oct 2024)](https://softwareengineeringdaily.com/2024/10/02/n64-recompiled-with-dario-and-wiseguy/).
+The graphics side is handled by **[RT64](https://github.com/rt64/rt64)**, created by **Dario Samo** (@dariosamo). RT64 is a modern rendering backend that translates N64 display lists into D3D12/Vulkan/Metal draw calls, and its README states the design goal plainly: it "uses ubershaders to guarantee no stutters due to pipeline compilation." It aims at accuracy rather than per-game hacks, and serves both emulators and native ports. (Ray tracing is in the name and in the roadmap -- that repository lists path tracing as still in development, so do not describe the shipping renderer as ray-traced.) Wiseguy and Dario discussed their collaboration and design philosophy in a [Software Engineering Daily interview (Oct 2024)](https://softwareengineeringdaily.com/2024/10/02/n64-recompiled-with-dario-and-wiseguy/).
 
 Since then, the N64Recomp ecosystem has grown rapidly: **sonicdcer** ported Star Fox 64 and Mario Kart 64, **Rainchus** ported Quest 64, **theboy181** ported Dr. Mario 64, and many others have contributed ports using the toolchain.
 
@@ -267,20 +267,86 @@ Static recompilation has grown from scattered individual efforts into a real com
 
 ### sp00nznet's Work
 
-This course's author, [sp00nznet](https://github.com/sp00nznet), has built recompilation projects spanning 10 architectures:
+The course creator, [sp00nznet](https://github.com/sp00nznet), maintains a public
+corpus of recompilation toolkits and ports. It is worth browsing rather than reading
+about, because almost every problem this course describes has a working (or
+interestingly *broken*) example sitting in one of these repositories, usually with a
+commit log documenting how it got that way.
 
-- **Game Boy (SM83)**: Game-specific recompilations
-- **SNES (65816)**: snesrecomp framework
-- **DOS (x86 real mode)**: DOS game recompilations
-- **N64 (MIPS R4300i)**: Multiple N64 title recompilations
-- **Xbox (x86)**: xboxrecomp toolkit
-- **Xbox 360 (PowerPC/Xenon)**: 360tools and XenonRecomp-based projects
-- **GameCube (PowerPC/Gekko)**: gcrecomp framework
-- **Dreamcast (SH-4)**: Dreamcast title recompilations
-- **PS2 (MIPS R5900)**: PS2 game recompilations
-- **PS3 (Cell BE / PPU + SPU)**: ps3recomp, tackling one of the most complex consumer architectures ever made
+Grouped by what makes each one instructive:
 
-This breadth across architectures is what motivated creating this course -- the same fundamental pipeline applies in every case, and the lessons learned on one architecture directly inform work on the next.
+**The consoles the course covers in depth**
+
+| Target | CPU | Toolkit |
+|---|---|---|
+| Game Boy | SM83 | [gb-recompiled](https://github.com/sp00nznet/gb-recompiled) |
+| SNES | 65816 | [snesrecomp](https://github.com/sp00nznet/snesrecomp) |
+| Game Boy Advance | ARM7TDMI | [gbarecomp](https://github.com/sp00nznet/gbarecomp) |
+| DOS / Win16 / Win32 | x86 | [pcrecomp](https://github.com/sp00nznet/pcrecomp) |
+| GameCube / Wii | PowerPC Gekko / Broadway | [gcrecomp](https://github.com/sp00nznet/gcrecomp) |
+| Dreamcast / Naomi | SH-4 | [dcrecomp](https://github.com/sp00nznet/dcrecomp) |
+| PlayStation 2 | MIPS R5900 | [PS2Recomp](https://github.com/sp00nznet/PS2Recomp) |
+| Xbox | x86-32 | [xboxrecomp](https://github.com/sp00nznet/xboxrecomp) |
+| PlayStation 3 | Cell PPE + SPU | [ps3recomp](https://github.com/sp00nznet/ps3recomp) |
+
+**8-bit and 16-bit, where a whole system fits in your head**
+
+[lynxrecomp](https://github.com/sp00nznet/lynxrecomp) (Atari Lynx, WDC 65SC02) ·
+[apple2recomp](https://github.com/sp00nznet/apple2recomp) (Apple II, 6502) ·
+[vic20recomp](https://github.com/sp00nznet/vic20recomp) (VIC-20, 6502) ·
+[zxrecomp](https://github.com/sp00nznet/zxrecomp) (ZX Spectrum, Z80) ·
+[tirecomp](https://github.com/sp00nznet/tirecomp) (TI-83/84, Z80) ·
+[vbrecomp](https://github.com/sp00nznet/vbrecomp) (Virtual Boy, NEC V810) ·
+[macrecomp](https://github.com/sp00nznet/macrecomp) (68k Macintosh)
+
+These are the best ones to read first. A Pac-Man board or a TI-83 program is a
+complete, honest instance of the entire pipeline at a size you can hold in your head
+in an afternoon -- see [pacrecomp](https://github.com/sp00nznet/pacrecomp) and
+[galaxrecomp](https://github.com/sp00nznet/galaxrecomp) for arcade Z80, and the
+"first game on the toolkit" ports that go with each toolkit:
+[chipschallenge-lynx-recomp](https://github.com/sp00nznet/chipschallenge-lynx-recomp),
+[blockdude-ti-recomp](https://github.com/sp00nznet/blockdude-ti-recomp),
+[manicminer-zx-recomp](https://github.com/sp00nznet/manicminer-zx-recomp),
+[oregontrail-apple2-recomp](https://github.com/sp00nznet/oregontrail-apple2-recomp).
+
+**Arcade hardware, where there is no OS to shim and no documentation**
+
+[model2recomp](https://github.com/sp00nznet/model2recomp) (Sega Model 2, Intel i960) ·
+[model3recomp](https://github.com/sp00nznet/model3recomp) (Sega Model 3, PowerPC 603e) ·
+[lindberghrecomp](https://github.com/sp00nznet/lindberghrecomp) (Sega Lindbergh -- a
+2005 PC, so the "ROM" is a 32-bit x86 ELF) ·
+[systemes3recomp](https://github.com/sp00nznet/systemes3recomp) (Namco System ES3) ·
+[cps1recomp](https://github.com/sp00nznet/cps1recomp) (Capcom CPS1) ·
+[MidwayRecomp](https://github.com/sp00nznet/MidwayRecomp) (Midway Seattle/Vegas, MIPS-IV)
+
+**Handhelds and phones, where the OS is the hard part**
+
+[psprecomp](https://github.com/sp00nznet/psprecomp) (PSP, Allegrex MIPS) ·
+[vitarecomp](https://github.com/sp00nznet/vitarecomp) (PS Vita, ARM) ·
+[ngagerecomp](https://github.com/sp00nznet/ngagerecomp) (N-Gage, Symbian ARMv4) ·
+[iparecomp](https://github.com/sp00nznet/iparecomp) (iPhone OS 2.x/3.x, 32-bit ARM Mach-O) ·
+[androidrecomp](https://github.com/sp00nznet/androidrecomp) (Android, ARM64 + Bionic shim)
+
+**The strange ones, which teach things the consoles cannot**
+
+| Target | Why it is interesting |
+|---|---|
+| [tamarecomp](https://github.com/sp00nznet/tamarecomp) | Tamagotchi P1 -- an Epson E0C6S46, a **4-bit** CPU. Everything you assume about byte-addressable memory stops being true. |
+| [newtonrecomp](https://github.com/sp00nznet/newtonrecomp) | Apple Newton -- the input is **NewtonScript bytecode**, not machine code. Lifting a VM is a different problem from lifting a CPU. |
+| [vmurecomp](https://github.com/sp00nznet/vmurecomp) | Dreamcast VMU -- a Sanyo LC8670 inside a memory card. |
+| [cybikorecomp](https://github.com/sp00nznet/cybikorecomp) | Cybiko -- Hitachi H8S/2246, plus an OS nobody documented. |
+| [doomrpgrecomp](https://github.com/sp00nznet/doomrpgrecomp) | Doom RPG -- **J2ME**, so again bytecode, and a phone runtime to reimplement. |
+| [nokia-recomp](https://github.com/sp00nznet/nokia-recomp) | Classic Nokia phone **firmware** (DCT4). Not a game at all. |
+| [worldempire](https://github.com/sp00nznet/worldempire) | A Visual Basic 3 title -- so the real target is the **VBRUN300 interpreter**, not the program's p-code. |
+
+That last row is the one to think hardest about. When a program ships as bytecode for
+an interpreter, "recompile the program" and "recompile the interpreter" are two
+different projects with different costs, and choosing wrong costs you months. This
+course returns to that decision in Module 7.
+
+The breadth is the point: the same pipeline -- parse container, find code, disassemble,
+lift, shim the hardware, compile -- applies in every row above, and every row teaches
+something the others cannot. That is what motivated writing this course.
 
 ### The Preservation Argument
 
@@ -294,7 +360,7 @@ Static recompilation produces a permanent, portable artifact -- C source code --
 
 Static recompilation is not a solved problem. Each of the following challenges will receive dedicated coverage later in this course:
 
-### Indirect Jumps and Calls (Module 7)
+### Indirect Jumps and Calls (Module 14)
 
 When a program computes a jump target at runtime -- through a function pointer, a jump table, or a calculated branch -- the static recompiler cannot determine at analysis time where execution will go. This is the single hardest problem in static recompilation. Solutions include jump table recovery, type analysis, and runtime fallback mechanisms.
 

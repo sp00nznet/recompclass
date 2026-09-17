@@ -24,7 +24,7 @@ Three reasons.
 
 **Third, hand-lifting reveals the edge cases.** Not every instruction is straightforward. `DAA` is weird. `HALT` needs special handling. `LD SP, HL` has different flag behavior than `LD A, B`. CB-prefix bit operations have their own quirks. You'll encounter these edge cases one at a time, in context, which is the best way to learn them.
 
-The N64 decomp community -- hundreds of people who have collectively decompiled millions of lines of MIPS code -- started by hand-matching functions one at a time. The `gb-recompiled` project was developed by someone who first translated Game Boy functions by hand to understand the process before automating it. This is the path.
+The N64 decomp community -- hundreds of people who have collectively decompiled millions of lines of MIPS code -- started by hand-matching functions one at a time. Every automated lifter in this course's reference corpus encodes rules someone first worked out by hand on paper. This is the path.
 
 ---
 
@@ -1534,6 +1534,7 @@ Look at the lifted VBlank handler from Section 8. That code -- with its `PUSH`/`
 - `gb-recompiled` generates it automatically from the ROM bytes.
 - `gb-recompiled` handles all 512 opcodes, not just the ones in our examples.
 - `gb-recompiled` generates the runtime and build system too.
+- `gb-recompiled` does not emit C directly from the decoder -- it builds an IR first (`recompiler/include/recompiler/ir/ir.h`) and the C emitter reads that. Your hand-lifting is doing both steps at once in your head.
 
 When you look at `gb-recompiled`'s output in Module 9, you won't see magic. You'll see automated versions of exactly what you've been doing by hand. And because you've done it by hand, you'll understand every line.
 

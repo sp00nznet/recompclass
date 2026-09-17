@@ -2,7 +2,7 @@
 
 The Xbox 360 represents a massive leap in complexity from the N64. Where an N64 game has 2,000-5,000 functions, an Xbox 360 game routinely has 10,000-50,000 or more. The CPU is a triple-core PowerPC Xenon with VMX/Altivec SIMD, the executable format is encrypted and compressed, and the runtime must shim an entire modern console operating system. This is where static recompilation pushes against the boundaries of what was previously thought feasible.
 
-This module covers the Xbox 360 hardware, the 360tools analysis toolkit, XenonRecomp's pipeline, PowerPC Xenon specifics that affect code generation, VMX-to-SIMDE translation, and the ReXGlue runtime layer.
+This module covers the Xbox 360 hardware, the extraction and triage pipeline, XenonRecomp's codegen, PowerPC Xenon specifics that affect code generation, VMX-to-SIMDE translation, and the ReXGlue runtime layer.
 
 ---
 
@@ -61,16 +61,22 @@ flowchart TD
 
 ---
 
-## 2. 360tools and XenonRecomp
+## 2. Getting from a Disc to Source
 
-### 360tools: Analysis Toolkit
+### Extraction and Triage
 
-360tools is a suite of utilities for working with Xbox 360 binaries:
+Before any recompiler runs, you have to get a PE image out of the shipping container.
+Two container formats, depending on where the game came from:
 
-- **XEX parser**: Decrypts, decompresses, and extracts the PE image from XEX2 containers
-- **Disassembler**: PowerPC Xenon disassembly with VMX instruction support
-- **Import resolver**: Maps import ordinals to known Xbox 360 API function names
-- **Function analyzer**: Identifies function boundaries in stripped binaries using prologue/epilogue patterns
+- **Retail disc** -- an XGD image with an XDVDFS filesystem. Extract, then find the XEX.
+- **XBLA / Games on Demand** -- an STFS or GoD package. Extract, then find the XEX.
+
+Then **XEX triage**: decrypt and decompress the XEX2 to recover the raw PE, read the
+headers for the image base (it is `0x82000000` on every retail title you are likely
+to meet), and parse the import table to learn which kernel and XAM ordinals the game
+needs. That last number matters more than it sounds -- see section 6.
+
+### XenonRecomp: The Recompiler Pipeline
 
 ### XenonRecomp: The Recompiler Pipeline
 
@@ -94,7 +100,11 @@ Xbox 360 games are stripped -- no debug symbols, no function names. Finding func
 - **Exception tables**: Some XEX2 files include exception handling tables that list function boundaries
 - **Import stubs**: Functions that load from the import table have a distinctive stub pattern
 
-Typical accuracy is 95-98% of functions identified automatically, with the remainder requiring manual annotation.
+Accuracy varies enormously by title and by how the game was compiled, and the useful
+measure is not a percentage -- it is **how many addresses you had to hint by hand**.
+On a well-behaved binary that number is startlingly small: see the table in section 6,
+where a 14,781-function game needed exactly one hint. On a badly-behaved one you will
+fight static-init thunks and tail calls for a day. Do not budget from an average.
 
 ---
 
@@ -308,49 +318,121 @@ Many networking and Xbox Live functions are stubbed (returning success but doing
 
 ## 6. Real-World Projects
 
-### gh2 (Guitar Hero 2)
+Every project below is public, and each README carries an **Honest scope** section
+saying exactly how far it actually got. Read them in that spirit -- these are
+bring-ups in progress, not finished ports, and the interesting material is in the gaps.
 
-Guitar Hero 2 is a rhythm game and one of the flagship XenonRecomp projects:
+### [Worms Revolution](https://github.com/sp00nznet/wormsrevolution) -- playable
 
-- **Approximately 15,000 functions**
-- Heavy audio processing requirements (rhythm detection, audio mixing)
-- Custom content loading system for songs and charts
-- Relatively moderate graphics complexity (stylized 3D, not photorealistic)
-- Good initial target because the game logic is well-structured
+Team17, 2012, GoD package. The one that actually plays: intro logos, full-motion video
+decoding natively, animated title screen, and the tutorial playable end to end with
+worms, terrain, weapons, physics, camera and input all working.
 
-### simpsonsarcade (The Simpsons Arcade Game)
+The number to stare at: codegen recompiled **88,816 functions**, and the entire
+reachable game needs **444 registered functions**. Everything else is dead weight in
+the binary -- unreferenced library code, dead branches, content paths this build never
+touches. Your recompiler's function count is not a measure of the work.
 
-An XBLA (Xbox Live Arcade) title -- smaller than full retail games:
+Its one known gap is a good lesson too. In-game **text does not render** -- speech
+bubbles appear empty, menu buttons are blank. Worms draws its text through *memexport*
+vertex shaders, where the GPU writes generated geometry back to memory, and the D3D12
+backend does not implement that yet, so those draws are dropped. That is a **runtime
+GPU feature gap, not missing recompiled code.** Learning to tell those two apart
+quickly is most of the skill in bring-up.
 
-- **Approximately 8,000 functions** (smaller scope)
-- 2D gameplay with 3D rendering
-- Useful as a validation target for the core recompilation pipeline
-- XBLA titles often have simpler system API usage
+### [You Don't Know Jack](https://github.com/sp00nznet/ydkj) -- renders its front end
 
-### ctxbla (Crazy Taxi)
+Jellyvision, XBLA. 5 MB guest image, **14,781 recompiled functions**, links into a
+21 MB executable with **zero hand-written kernel stubs** -- the runtime already
+exported all **209** kernel/XAM imports the game asked for, verified by diffing
+`__imp__` symbols against the SDK libraries. Boots crash-free to the animated title
+screen with text rendering correctly.
 
-Another XBLA title, a port of the Dreamcast/arcade classic:
+**One codegen hint.** The first pass surfaced a single unresolved call: a tail-call to
+`0x82236F38` that discovery had not placed inside any function. One entry in the
+manifest, second pass clean.
 
-- **Approximately 12,000 functions**
-- Interesting because the underlying game code has Dreamcast heritage
-- Tests physics and open-world streaming systems
-- Audio system uses multiple XAudio2 voices simultaneously
+### [Civilization Revolution](https://github.com/sp00nznet/civrev) -- boots into engine init
 
-### vig8 (Vigilante 8)
+2K/Firaxis, Gamebryo engine. 16.8 MB image, **40,067 functions**, **231 MB of generated
+C++**, an 80 MB executable. Boots with zero fatal or unresolved lines all the way
+through D3D12 device creation, audio and XMA threads, guest disk mount, XEX load and
+GPU interrupt callback -- then dies in asset loading, because Gamebryo probes for a
+`D:` installed-title mount and an `Assets/` + `Resource/Xenon/` layout the disc extract
+does not provide, and does not error-check the misses.
 
-- **Approximately 10,000 functions**
-- Vehicular combat with destructible environments
-- Tests physics simulation and particle systems
-- Multiplayer code paths (local split-screen)
+This is the project that produced the **over-hinting trap** described in Module 14:
+301 pointer-scan hints made the build worse, 21 runtime-harvested hints fixed it.
+
+### [OutRun Online Arcade](https://github.com/sp00nznet/outrun) -- crashes in global init
+
+Sega / Sumo Digital, XBLA, delisted 2011. 11.1 MB image, ~3,400 assets, recompiles with
+**zero hints** and links with **no missing stubs**, and the runtime comes all the way up
+before the guest crashes during its own global initialization -- an unchecked virtual
+call on a subsystem object that should have been constructed and is null.
+
+Worth studying because the README documents a **ruled-out red herring**: an early
+suspect (a failed `ShaderDump` device probe) turned out to be a harmless get-file-size
+on another thread. Bring-up is mostly eliminating plausible wrong answers, and writing
+down the ones you eliminated is how you stop re-investigating them at 2am.
+
+It also shows the limit of tolerance shims. Blunt tolerances get *past* the null
+dereference -- and the next function genuinely needs that subsystem, so the crash just
+moves. Tolerance buys you a debugger session, not a fix.
+
+### [After Burner Climax](https://github.com/sp00nznet/afterburner) -- scaffolded
+
+Sega AM2, XBLA, delisted 2015. A hefty 43.6 MB image, 4 function-entry hints, built but
+not yet booted. Included here because a 3D/VMX-heavy arcade title will exercise far more
+of the runtime than the 2D catalogue -- a useful reminder that "it recompiled cleanly"
+predicts almost nothing about bring-up difficulty.
+
+### Why these claims are structurally checkable
+
+Module 27 gives a ten-minute test for whether a project's screenshots come from the
+recompiled program or from its harness. Apply it here, because these repositories pass it
+in a way that is worth seeing.
+
+`wormsrevolution`'s entire hand-written surface is four files:
+
+```
+project/src/main.cpp                146 bytes
+project/src/worms_app.h           1,589 bytes
+project/src/stubs.cpp             3,942 bytes
+project/src/dispatch_tolerance.cpp 2,785 bytes
+```
+
+`main.cpp` in full is an include and a `REX_DEFINE_APP` macro. `worms_app.h` is a
+subclass of `rex::ReXApp` whose only override is a debug image dump gated behind an
+environment variable. `ydkj` is smaller still -- three files, under 3 KB.
+
+There is no renderer here. No asset loader, no menu code, no scene graph. Everything on
+screen comes from the recompiled game driving the SDK runtime, because **there is nothing
+else in the repository that could draw it.**
+
+Contrast Module 27's `burnout3`, whose `src/game/` holds a 1,919-line hand-written
+RenderWare renderer and an 825-line hand-written front-end menu with hardcoded labels.
+Both projects are real work. Only one of them can point at a screenshot and say the
+recompiled game produced it, and you can tell which from `ls` and `wc -l` before reading
+a single claim.
+
+This is the strongest argument for the toolkit-plus-thin-game-project structure this
+course keeps recommending. When the per-title code is three files, "the game runs" means
+something, because there is no room for it to mean anything else.
 
 ### Scale Summary
 
-| Project | Functions | Category | Key Challenge |
-|---|---|---|---|
-| gh2 | ~15,000 | Retail | Audio pipeline, content loading |
-| simpsonsarcade | ~8,000 | XBLA | Baseline validation |
-| ctxbla | ~12,000 | XBLA | Physics, streaming |
-| vig8 | ~10,000 | XBLA | Physics, multiplayer |
+| Project | Image | Functions | Hints | Stubs | Output | Where it got to |
+|---|---|---|---|---|---|---|
+| [ydkj](https://github.com/sp00nznet/ydkj) | 5 MB | 14,781 | 1 | 0 | 21 MB | title screen renders |
+| [outrun](https://github.com/sp00nznet/outrun) | 11.1 MB | -- | 0 | 0 | 22 MB | crash in guest global-init |
+| [civrev](https://github.com/sp00nznet/civrev) | 16.8 MB | 40,067 | 24 | 1 bundle | 80 MB | engine init, no render |
+| [wormsrevolution](https://github.com/sp00nznet/wormsrevolution) | -- | 88,816 (444 reached) | -- | -- | 74 MB | **playable** |
+| [afterburner](https://github.com/sp00nznet/afterburner) | 43.6 MB | -- | 4 | -- | -- | built, not booted |
+
+Read down the Hints column against the Functions column. Then read the last column.
+**There is no correlation.** Codegen difficulty and bring-up difficulty are unrelated
+problems, and the second one is where the months go.
 
 ### Lessons Learned
 
@@ -366,7 +448,7 @@ Another XBLA title, a port of the Dreamcast/arcade classic:
 
 ## Lab Reference
 
-**Lab 17** walks you through analyzing an Xbox 360 XEX2 binary with 360tools, examining the import table, running XenonRecomp on a subset of functions, and inspecting the generated C code for VMX operations and condition register handling.
+**Lab 17** walks you through analyzing an Xbox 360 XEX2 binary -- parsing the headers, examining the import table, running XenonRecomp on a subset of functions, and inspecting the generated C code for VMX operations and condition register handling.
 
 ---
 

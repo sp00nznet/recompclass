@@ -1616,123 +1616,103 @@ This is extremely effective at finding flag computation bugs. Run 10,000 random 
 
 ## 12. Real Examples from gb-recompiled and snesrecomp
 
-Let's look at how real recompiler projects implement lifting.
+Everything above described lifting as a direct instruction-to-C mapping. Two real
+projects show why that description is incomplete, and they are incomplete in opposite
+directions.
 
-### gb-recompiled: SM83 Lifter Output
+### gb-recompiled: there is an IR in the middle
 
-The `gb-recompiled` project by Matt Currie generates C code from Game Boy ROMs. Here's representative output from its lifter (simplified):
+[gb-recompiled](https://github.com/sp00nznet/gb-recompiled) is a fork of
+[arcanite24](https://github.com/arcanite24)'s (Brandon G. Neri) Game Boy recompiler.
+The thing to notice when you open it is that it does **not** go straight from
+instruction to C. It goes instruction to IR to C:
+
+```
+recompiler/include/recompiler/ir/ir.h            <- the IR opcode set
+recompiler/include/recompiler/ir/ir_builder.h    <- SM83 -> IR
+recompiler/include/recompiler/ir/ir_optimizer.h  <- passes over the IR
+recompiler/include/recompiler/codegen/c_emitter.h <- IR -> C
+```
+
+The header says why, plainly:
+
+> The IR layer decouples instruction semantics from code generation, enabling
+> optimization passes and future backend support (e.g., LLVM).
+
+The IR opcode set is not a generic compiler IR -- it is SM83 semantics named honestly.
+`LD_HL_SP_N` is its own opcode "for LD HL,SP+n", because that one instruction sets H
+and C flags in a way nothing else does and pretending it is an `ADD` loses that. Same
+for `JUMP_REG // Jump to address in register (JP HL)`, which gets its own opcode
+precisely because it is the hard case.
+
+The optimizer (`ir_optimizer.h`) runs constant propagation and dead-code elimination
+at `O1`, with an `O2` that is documented as "may affect debugging."
+
+**Is an IR worth it?** For a Game Boy, arguably not -- the C compiler already deletes
+the dead flag writes, which is the main thing an IR pass would catch. The honest
+reasons to build one are the two in that header comment: you want more than one
+backend, and you want somewhere to hang analyses that need to see the program as
+something other than text. Decide that deliberately rather than inheriting it.
+
+### snesrecomp: there is no lifter at all
+
+This is the correction worth making. [snesrecomp](https://github.com/sp00nznet/snesrecomp)
+is **not** a 65816 lifter. It is two things, neither of which generates code:
+
+**An op kit.** `include/snesrecomp/cpu_ops.h` is a header of macros and inline
+functions, one per 65816 instruction, operating on a global `g_cpu` and
+`bus_read8`/`bus_write8`. Its own comment: *"Recompiled functions are sequences of
+these operations... game-agnostic. Any recomp project targeting a SNES ROM can use it
+as a starting set."*
 
 ```c
-/* gb-recompiled output for a typical Game Boy function.
-   This function reads a joypad button state and processes input. */
-void func_028A(gb_state *ctx) {
-label_028A:
-    /* 028A: LD A, [0xFF00+0x00] -- read joypad register */
-    ctx->A = mem_read(ctx, 0xFF00);
+#define OP_SEI()  (g_cpu.flag_I = true)
 
-    /* 028C: CPL -- complement A (flip all bits) */
-    ctx->A = ~ctx->A;
-    ctx->F_N = 1;
-    ctx->F_H = 1;
-
-    /* 028D: AND 0x0F -- mask lower nibble (d-pad bits) */
-    ctx->A = ctx->A & 0x0F;
-    ctx->F_Z = (ctx->A == 0);
-    ctx->F_N = 0;
-    ctx->F_H = 1;
-    ctx->F_C = 0;
-
-    /* 028F: SWAP A -- swap nibbles */
-    ctx->A = ((ctx->A & 0x0F) << 4) | ((ctx->A >> 4) & 0x0F);
-    ctx->F_Z = (ctx->A == 0);
-    ctx->F_N = 0;
-    ctx->F_H = 0;
-    ctx->F_C = 0;
-
-    /* 0291: LD B, A -- save in B */
-    ctx->B = ctx->A;
-
-    /* 0292: LD A, [0xFF00+0x00] -- read joypad again */
-    ctx->A = mem_read(ctx, 0xFF00);
-
-    /* 0294: CPL */
-    ctx->A = ~ctx->A;
-    ctx->F_N = 1;
-    ctx->F_H = 1;
-
-    /* 0295: AND 0x0F */
-    ctx->A = ctx->A & 0x0F;
-    ctx->F_Z = (ctx->A == 0);
-    ctx->F_N = 0;
-    ctx->F_H = 1;
-    ctx->F_C = 0;
-
-    /* 0297: OR B -- combine d-pad and button bits */
-    ctx->A = ctx->A | ctx->B;
-    ctx->F_Z = (ctx->A == 0);
-    ctx->F_N = 0;
-    ctx->F_H = 0;
-    ctx->F_C = 0;
-
-    /* 0298: LD [0xFFA0], A -- store combined joypad state */
-    mem_write(ctx, 0xFFA0, ctx->A);
-
-    /* 029B: RET */
-    ctx->SP += 2;
-    return;
+static inline void op_rep(uint8_t val) {   /* REP #imm -- clear specified flags */
+    uint8_t p = cpu_get_p();
+    p &= ~val;
+    cpu_set_p(p);
 }
 ```
 
-Notice:
-- Every instruction produces explicit flag updates.
-- Memory accesses go through `mem_read`/`mem_write`.
-- The code is verbose but obviously correct -- each line maps to one instruction.
-- A C compiler will optimize away the dead flag computations (the flags from AND at 0x028D are immediately overwritten by SWAP at 0x028F).
+Your lifter's job then shrinks to choosing which macro to emit and with what operand.
+The semantics -- including every flag rule you would otherwise get subtly wrong --
+live in a header that is tested once and reused by every project.
 
-### snesrecomp: 65816 Lifter Output
+**A hardware runtime.** The other half is the SNES itself: PPU, SPC700 audio, DMA,
+Mode 7. It does not reimplement any of that. It links
+[LakeSnes](https://github.com/sp00nznet/LakeSnes) (MIT) and exposes it behind
+`bus_write8(bank, addr, val)`.
 
-The SNES lifter has additional complexity from variable-width registers. Here's a simplified example:
+The README states the strategy in one line, and it is one of the load-bearing ideas
+in this whole field:
 
-```c
-/* snesrecomp output for a 65816 function.
-   M flag is set (8-bit accumulator), X flag is set (8-bit index). */
-void func_008000(snes_state *ctx) {
-    /* 008000: SEP #$30 -- Set M and X flags (8-bit mode) */
-    ctx->P_M = 1;
-    ctx->P_X = 1;
+> Chop up an emulator, turn the hardware into libraries, let game-specific projects
+> link against them.
 
-    /* 008002: LDA #$00 -- Load 8-bit immediate */
-    ctx->A = (ctx->A & 0xFF00) | 0x00;  /* Only modify low byte */
-    ctx->P_Z = ((ctx->A & 0xFF) == 0);
-    ctx->P_N = ((ctx->A & 0x80) != 0);
+That is the same move N64Recomp makes with parallel-rdp. It is worth internalizing
+early: **lifting the CPU is the part you write; the hardware is the part you should
+try very hard not to write.** Module 15 is entirely about this.
 
-    /* 008004: STA $7E0010 -- Store to absolute long address */
-    mem_write_long(ctx, 0x7E, 0x0010, (uint8_t)(ctx->A & 0xFF));
+### What gb-recompiled's numbers actually say
 
-    /* 008007: REP #$20 -- Clear M flag (16-bit accumulator) */
-    ctx->P_M = 0;
+The README reports **98.94%** of a test library recompiling successfully -- 1,592 of
+1,609 ROMs. The very next words in that line are:
 
-    /* 008009: LDA #$1234 -- Load 16-bit immediate (M flag clear) */
-    ctx->A = 0x1234;
-    ctx->P_Z = (ctx->A == 0);
-    ctx->P_N = ((ctx->A & 0x8000) != 0);
+> **MOST OF THE GAMES ARE NOT FULLY PLAYABLE YET**
 
-    /* 00800C: STA $7E0020 -- Store 16-bit to long address */
-    mem_write16_long(ctx, 0x7E, 0x0020, ctx->A);
+Quote the number with the caveat attached or do not quote it. "Recompiles" means the
+tool produced C that compiled. It does not mean the game runs, and the gap between
+those two is where the rest of this course lives.
 
-    /* 00800F: RTL -- Return long */
-    /* Pop 24-bit return address */
-    ctx->SP += 3;
-    return;
-}
-```
-
-Key differences from SM83:
-- The `SEP`/`REP` instructions change register widths, affecting subsequent instruction behavior.
-- `LDA` in 8-bit mode only modifies the low byte of A, preserving the high byte.
-- `LDA` in 16-bit mode writes the full 16-bit register.
-- The lifter must track the M and X flag state to emit the correct code.
-- Long addressing (24-bit: bank + 16-bit address) requires a different memory access model.
+The harder number in that repo is the one about discovery: the static solver for
+`JP HL` / `CALL HL` tracks register contents through control flow and backtracks to
+find page-aligned jump tables, and gets **above 98% code discovery on Pokémon-class
+RPGs without a dynamic trace**. When that is not enough, the fallback is not an
+interpreter -- it is a *trace*: run the game under PyBoy, log every `(bank, PC)` that
+actually executed, and feed that back as entry points (`--use-trace`). Ground truth
+from one playthrough beats any amount of static cleverness, and Module 14 revisits
+this idea in a much harsher setting.
 
 ### N64 Recompilation: MIPS Lifter Output
 

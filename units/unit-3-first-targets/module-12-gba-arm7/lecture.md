@@ -1725,6 +1725,123 @@ The GBA is your bridge from retro 8/16-bit systems to the 32-bit world. Once you
 
 ---
 
+## 15. Real-World Reference
+
+### [gbarecomp](https://github.com/sp00nznet/gbarecomp) -- read the code, not the README
+
+Start here with a warning, because this repository is the course's own worked example of
+a claim that the source does not support.
+
+The README says:
+
+> **True static recompilation.** No emulator runs underneath. The recompiled C code IS
+> the CPU. Memory is flat arrays, hardware is lightweight C modules, and the only runtime
+> dependency is SDL2 for display.
+
+**That is not what the shipped runtime does.** `src/` contains two runtimes:
+
+```
+src/runtime.c        2,423 lines   the standalone runtime the README describes
+src/runtime_mgba.c   1,042 lines   the one that actually runs games
+src/interception.c     254 lines   how the two halves meet
+```
+
+`runtime_mgba.c` opens by saying so itself: *"Replaces the standalone runtime with mGBA
+for accurate hardware emulation."* It links **libmgba**, and the frame is driven by
+`core->runFrame(core)` -- mGBA's own emulator loop.
+
+The recompiled code gets in via `interception.c`, which installs a hook through
+`ARMSetRecompHook`. mGBA calls it **before every instruction**; the hook masks the Thumb
+or ARM pipeline offset off the PC, binary-searches a function table, and if there is a
+recompiled function at that address it copies the registers out of mGBA's `ARMCore` into
+the recompiled globals, runs the native C function, and copies them back.
+
+So the architecture is **an emulator that occasionally executes native code**, not a
+native program. That is a perfectly good design -- it is the same one Module 11's SNES
+work uses -- but it is the opposite of the README's claim.
+
+### Why "it plays the game" proves nothing here
+
+Now read the fallback path, which is the important part:
+
+```c
+    if (crashed) {
+        /* Restore state and let mGBA interpret this function */
+        memcpy(cpu->gprs, saved_gprs, sizeof(saved_gprs));
+        cpu->cycles = saved_cycles;
+        failed++;
+        ...
+        return false; /* Let mGBA interpret it */
+    }
+```
+
+The recompiled function is called inside a `__try`/`__except`. If it crashes, the
+registers are rolled back and mGBA interprets the original instructions instead. There is
+a second identical rollback if the function returns to an address outside the valid
+memory regions.
+
+Work through the consequence. **If every single recompiled function were wrong, the game
+would still play perfectly**, at full speed, with correct graphics and audio -- because
+every one would crash, roll back, and be interpreted by mGBA. The only visible difference
+would be some lines on stderr, and the code only prints the first 20 of those
+(`if (failed <= 20)`).
+
+A screenshot of a working game is therefore **zero evidence** that any recompilation
+happened. The counters that would be evidence -- `successful` and `failed` -- exist right
+there in `interception.c` and are the numbers a README should lead with.
+
+This is not a criticism of the technique. Incremental interception is a genuinely good
+way to build a recompiler (Module 11 argues for it). It is a criticism of the claim, and
+a reason to build the habit this course keeps pushing: **when a project says it works,
+open `src/` and find out what "works" is doing.**
+
+### [lttp-recompiled](https://github.com/sp00nznet/lttp-recompiled) -- a research log, not a codebase
+
+*A Link to the Past & Four Swords* (GBA, 2002), used to stress gbarecomp with something
+much larger than its first target.
+
+**Check the repository before you read the numbers.** It contains two files -- `README.md`
+and `.gitignore`. There is no code. All 18 commits are documentation updates, and
+`recomp_out/` is gitignored. The reported figures --
+
+| | |
+|---|---|
+| Functions found | 15,264 |
+| Basic blocks | 114,908 |
+| Generated C | 153 files, 114 MB |
+| Stubs emitted | 7,331 + 833 trap stubs |
+| Native binary | 20.8 MB, ~30 min build |
+
+-- are a report of work done locally. Nothing in the repository can confirm them, and
+because gbarecomp runs on mGBA with silent fallback, "600+ frames render at 60 fps" is
+not by itself a statement about recompiled code.
+
+**What the repository actually is, and why it is worth reading anyway.** Read the commit
+subjects in order:
+
+```
+ARM MSR/MRS fix: IRQ handler runs clean, 600+ frames, forced-blank parity
+Document IRQ-table-uninitialized root cause + 3rd gbarecomp fix
+EEPROM_V (8KB) emulation - sixth upstream gbarecomp fix
+Diagnose Four Swords link-cable state-machine gate (7th gbarecomp fix)
+Eighth upstream gbarecomp fix: minimal SIO transfer sim
+README: 10th upstream fix (Thumb MOV pc, rN fall-through) + state-machine progress
+```
+
+**Ten upstream fixes to the toolkit**, each found by driving one hard game through it and
+tracking down why it stopped. That is the actual output of this project, and it is more
+valuable than a port would have been.
+
+This is a real and underrated project shape: **the stress target.** You pick a game too
+big for your tool specifically to find out where the tool breaks, you fix the tool, and
+the deliverable is the fixes. The game may never run. Judge it on the ten commits that
+say "upstream fix," not on the status table.
+
+If you do this, say so in the README. A status table that looks like a port in progress
+invites the wrong reading of an honest piece of work.
+
+---
+
 ## Labs
 
 The following labs accompany this module:

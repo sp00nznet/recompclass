@@ -155,8 +155,8 @@ A static recompiler targeting the original Xbox (x86-based). Covers XBE loading,
 **ps3recomp** -- [github.com/sp00nznet/ps3recomp](https://github.com/sp00nznet/ps3recomp)
 PS3 runtime libraries and recompilation support. Showcases the unique challenges of the Cell architecture: PPU (PowerPC) + SPU recompilation, 128-bit register file, local store memory model, and channel-based I/O.
 
-**360tools** -- [github.com/sp00nznet/360tools](https://github.com/sp00nznet/360tools)
-Xbox 360 analysis and recompilation utilities. Used alongside XenonRecomp for Xenon PPC targets.
+**Xbox 360 bring-ups** -- [wormsrevolution](https://github.com/sp00nznet/wormsrevolution), [ydkj](https://github.com/sp00nznet/ydkj), [civrev](https://github.com/sp00nznet/civrev), [outrun](https://github.com/sp00nznet/outrun)
+Four Xenon PPC titles recompiled with XenonRecomp against the [ReXGlue SDK](https://github.com/rexglue/rexglue-sdk) runtime, each stalled at a different stage -- playable, front-end rendering, engine init, and guest global-init crash. Read them side by side; the READMEs and commit logs are more instructive than any one finished port.
 
 **neogeorecomp** -- [github.com/sp00nznet/neogeorecomp](https://github.com/sp00nznet/neogeorecomp)
 Neo Geo MVS/AES runtime for 68000-based arcade hardware recompilation.

@@ -2,10 +2,12 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Course Status](https://img.shields.io/badge/Course-In_Development-orange.svg)](#)
-[![Modules](https://img.shields.io/badge/Modules-32-blue.svg)](#)
+[![Modules](https://img.shields.io/badge/Modules-38_of_64-blue.svg)](#)
 [![Labs](https://img.shields.io/badge/Labs-50-green.svg)](#)
 
-> A two-semester open course on static binary recompilation -- the art of translating compiled programs from one platform to another at the source level.
+> An open course on static binary recompilation -- the art of translating compiled programs from one platform to another at the source level.
+>
+> Semesters 1 and 2 are complete (Modules 1-32). Semester 3 is in progress (Modules 33-38 written). Semester 4 is planned.
 
 ---
 
@@ -13,13 +15,15 @@
 
 Static recompilation is the process of disassembling a compiled binary, lifting its instructions into portable C source code, and recompiling that code to run natively on modern hardware -- no runtime emulator required. It is one of the most powerful techniques in software preservation, yet almost no structured learning material exists for it.
 
-This course changes that. Across **8 Units**, **32 Modules**, and **50 Hands-on Labs**, you will go from understanding basic binary formats to recompiling real console games for modern platforms. Every module draws on real-world projects and production toolchains.
+This course changes that. Across **10 Units**, **38 Modules**, and **50 Hands-on Labs**, you will go from understanding basic binary formats to recompiling real console games for modern platforms.
+
+Every module points at real, public, committed work -- specific files, specific commits, specific numbers -- rather than describing techniques in the abstract. Where a project's own README overstates what its code does, the course says so and shows you how to check. Module 37 is entirely about that skill.
 
 **Semester 1** ramps up slowly. Plenty of time to get comfortable reading assembly, using the tools, and understanding the mechanical process of lifting -- all before you touch a real console target. Your first recompilations are the simplest architectures: Game Boy, NES, SNES, GBA, and DOS.
 
 **Semester 2** is where things get serious. N64, GameCube, Wii, Dreamcast, PS2, Saturn, Xbox, Xbox 360, and PS3. Multi-processor systems, GPU pipeline translation, and the hardest targets the community has tackled.
 
-**Author:** [Ned Heller](https://github.com/sp00nznet) (sp00nznet) -- hobbyist and static recompilation practitioner with projects spanning 12 CPU architectures, including N64, SNES, Game Boy, NES, GBA, Xbox, Xbox 360, PS2, PS3, GameCube, Dreamcast, Saturn, Wii, and DOS.
+**Projects this course draws on:** [Ned Heller](https://github.com/sp00nznet) (sp00nznet) -- hobbyist and static recompilation practitioner, maintaining a public corpus of recompilation toolkits and ports spanning 25+ CPU families. Consoles (N64, SNES, Game Boy, GBA, Xbox, Xbox 360, PS2, PS3, GameCube, Wii, Dreamcast, Saturn), arcade boards (Sega Model 2/3, Lindbergh, Namco System ES3, CPS1, Midway), handhelds and phones (PSP, Vita, N-Gage, iOS, Android), home computers (Apple II, VIC-20, ZX Spectrum, 68k Macintosh), and some genuinely strange ones -- a 4-bit Tamagotchi, the Apple Newton's bytecode, and a Dreamcast VMU.
 
 **Community:** Join the [sp00nznet recomp Discord](https://discord.gg/CRpzGWZFcu) -- a place to discuss static recompilation, debugging, course material, or just hang out with others working on recomp projects.
 
@@ -124,6 +128,20 @@ Whether you are a preservationist, a reverse engineer, a systems programmer, or 
 | [Module 31](units/unit-8-extreme-targets/module-31-multithreaded-recomp/) | Multi-Threaded Recompilation | Dual-CPU, heterogeneous, synchronization, deterministic multi-threaded testing |
 | [Module 32](units/unit-8-extreme-targets/module-32-capstone-project/) | Capstone Project | Full end-to-end recompilation of a real binary you choose |
 
+### Semester 3 -- Production Engineering (in progress)
+
+| Module | Topic | Key Concepts |
+|---|---|---|
+| [Module 33](units/unit-9-automated-pipelines/module-33-automated-disassembly/) | Automated Disassembly Pipelines | Stage-based pipelines, container extraction, discovery as a committed artifact, batch harnesses |
+| [Module 34](units/unit-9-automated-pipelines/module-34-lifting-at-scale/) | Automated Lifting at Scale | Where semantics live, table-driven decoding, front-end reuse, output volume, what counts as a function |
+| [Module 35](units/unit-9-automated-pipelines/module-35-ci-for-recomp/) | CI/CD for Recompilation | Testing without shipping the ROM, synthetic fixtures, regression gates, the green badge that tests nothing |
+| [Module 36](units/unit-9-automated-pipelines/module-36-config-driven-recomp/) | Configuration-Driven Recompilation | The manifest is the project, hint tables, multi-target builds, configurable escape hatches |
+| [Module 37](units/unit-10-quality-correctness/module-37-what-it-works-means/) | What "It Works" Means | The ladder of evidence, harness-produced evidence, silent fallbacks, the ten-minute audit |
+| [Module 38](units/unit-10-quality-correctness/module-38-differential-testing/) | Differential Testing and Oracles | Oracle before lifter, bisecting the lifted set, boundary tripwires, a full campaign read commit by commit |
+
+Modules 39-48 are outlined in [SYLLABUS.md](SYLLABUS.md) and not yet written.
+Semester 4 is planned in [papers/semesters-3-4-plan.md](papers/semesters-3-4-plan.md).
+
 ---
 
 ## Getting Started
@@ -159,6 +177,8 @@ recompclass/
     unit-6-console-architectures/ Modules 20-25
     unit-7-advanced-targets/    Modules 26-29
     unit-8-extreme-targets/     Modules 30-32
+    unit-9-automated-pipelines/ Modules 33-36   (Semester 3)
+    unit-10-quality-correctness/ Modules 37-40  (Semester 3)
   labs/                50 hands-on lab exercises
 ```
 
@@ -179,6 +199,27 @@ Contributions, corrections, and improvements are welcome. Please read [CONTRIBUT
 ## License
 
 This course is released under the [MIT License](LICENSE). You are free to use, modify, and distribute the material with attribution.
+
+---
+
+## How This Course Was Written
+
+Worth stating plainly, because the course asks you to be honest about your own work.
+
+The recompilation projects this course draws on --
+[the toolkits and the ports](https://github.com/sp00nznet?tab=repositories) -- are
+[Ned Heller (sp00nznet)](https://github.com/sp00nznet)'s, built over years across
+30-odd architectures.
+
+The course material itself -- the module prose, the worked examples, the structure --
+was **written by Claude (Anthropic)**, working from those repositories, their
+documentation and their commit histories, and directed and corrected by Ned throughout.
+Where a module cites a number, a file or a bug, it is pointing at real committed work in
+a public repository; go read the source rather than trusting the summary. Where a module
+is wrong, that is a course bug -- [open an issue](../../issues).
+
+That division is the same one the course teaches: the artifact is the evidence, the
+write-up is a claim about it, and the two should be checkable against each other.
 
 ---
 

@@ -324,35 +324,135 @@ Additionally, Xbox 360 games make heavy use of VMX128 (the SIMD extension) and f
 
 ## 8. Real-World Reference
 
-### gb-recompiled
+The three tiers above are a teaching model. Here is what they actually look like in
+shipped code, with the files to go read.
 
-Game Boy games typically have very few indirect jumps. In gb-recompiled, most `JP HL` instances are resolved through jump table analysis (Tier 1). The dispatch table (Tier 2) handles the remainder. The interpreter fallback (Tier 3) exists but is rarely invoked in practice.
+### xboxrecomp -- `RECOMP_ICALL`, and where the tiers really land
 
-### xboxrecomp
+Every indirect call in xboxrecomp's generated code goes through one macro. Read
+[`docs/technical/indirect-calls.md`](https://github.com/sp00nznet/xboxrecomp/blob/main/docs/technical/indirect-calls.md)
+before you read anything else in this section.
 
-Xbox recompilation encounters the full force of C++ vtable dispatch. xboxrecomp by sp00nznet implements vtable reconstruction by scanning the executable's read-only data sections for arrays of valid code pointers. Per-slot dispatch tables reduce the search space. In a typical Xbox game, approximately 80-90% of indirect calls are resolved through vtable analysis (Tier 1), 5-15% through the dispatch table (Tier 2), and under 5% require the interpreter (Tier 3).
+Note that the shipped tiers are *not* the ones this module described:
 
-### burnout3
+| | This module | xboxrecomp |
+|---|---|---|
+| Tier 1 | static analysis (jump tables, vtables) | manual overrides (~30 hand-written replacements) |
+| Tier 2 | dispatch table | dispatch table (22,097 entries, binary search) |
+| Tier 3 | interpreter fallback | kernel bridge (thunks at `0xFE000000+`) |
+| Miss | -- | pop the dummy return address, return 0, keep going |
 
-The *Burnout 3* recompilation (Xbox) demonstrates a high indirect call count due to the game's heavy use of virtual methods for vehicle physics, rendering, and AI. The project uses aggressive vtable analysis and manual annotation for the remaining cases. It achieves full Tier 1/2 coverage with zero Tier 3 fallback in normal gameplay.
+There is no interpreter tier. A miss is not fatal and it is not emulated -- it
+returns zero and the game keeps running. That is a deliberate choice, and it costs
+something: see **the stack leak problem** in that doc. A failed `stdcall` dispatch
+leaves the pushed arguments and the dummy return address on the guest stack, so
+every miss leaks at least 4 bytes. At 60 FPS that is unbounded growth, which is why
+`RECOMP_ICALL_SAFE` exists and takes a saved `esp`.
 
-### 360tools
+The static-analysis work this module calls Tier 1 still happens, but it happens
+*offline*, in tools, and it does not feed the dispatch path -- it feeds the list of
+addresses the recompiler agrees to lift at all. Those are different jobs, and this
+module blurred them.
 
-Xbox 360 recompilation tools by sp00nznet handle the CTR-based indirect branch pattern. The tools implement backward data flow analysis from every `BCTR`/`BCTRL` instruction to find the corresponding `MTCTR` and trace the source register to its origin. Combined with function pointer table scanning, this resolves the majority of indirect branches statically.
+### The garbage pointer problem (this module did not warn you about it)
 
-### Statistics from Real Projects
+Corrupted vtable pointers, not unknown-but-valid targets, are the number one source
+of dispatch failures in practice. When a constructor gets stubbed, the object's
+vtable pointer is whatever happened to be in that memory. xboxrecomp handles this
+with a single range check ahead of all three tiers: valid code lives in
+`[0x00011000, 0x003B0000)`, kernel thunks at `0xFE000000+`, and anything in between
+is garbage and is skipped.
 
-Across sp00nznet's recompilation portfolio, the following patterns emerge:
+That one check took Burnout 3 from 180 failed indirect calls per 2-second window
+down to 121. It is four lines.
 
-- **8-bit systems** (Game Boy): 95-100% of indirect calls resolved at Tier 1.
-- **16-bit systems** (SNES, DOS): 85-95% at Tier 1, remainder at Tier 2.
-- **32-bit RISC** (N64, GameCube): 80-95% at Tier 1, 5-15% at Tier 2, under 5% at Tier 3.
-- **Modern consoles** (Xbox, Xbox 360, PS3): 70-90% at Tier 1, 10-25% at Tier 2, under 5% at Tier 3.
+### tirecomp -- the whole thing in 65 lines
 
-The trend is clear: as architectures and programs grow more complex, more indirect calls escape static analysis. But the dispatch table catches most of what static analysis misses, and the interpreter fallback handles the long tail. The three-tier architecture scales across all architectures.
+If the Xbox version is too much at once, read
+[`tirecomp/src/recomp_rt.c`](https://github.com/sp00nznet/tirecomp/blob/main/src/recomp_rt.c).
+The Z80 address space is 64KB, so the dispatch table is not a binary search -- it is
+just an array:
 
----
+```c
+static ti_func_t g_dispatch[0x10000];                            /* line 7  */
+void ti_register_func(uint16_t addr, ti_func_t fn) { g_dispatch[addr] = fn; }
+ti_func_t ti_lookup_func(uint16_t addr)            { return g_dispatch[addr]; }
+```
 
+One pointer per possible address, 512KB of table, O(1) lookup, no analysis required.
+Whether you can afford that is a question about your address space, not about your
+recompiler.
+
+tirecomp also shows the *other* shape of dispatch. Instead of recompiled functions
+calling each other in nested C frames, every block runs to a control-transfer
+boundary, writes `ti_cpu.pc`, and returns to a driver loop that dispatches the next
+one (`ti_run`, same file). That makes `JP (HL)` completely uninteresting -- it is a
+store to `pc` -- at the cost of a table lookup on every transfer, including the ones
+a nested design would have compiled into a direct call. The interpreter fallback is
+a function pointer, `ti_dispatch_fallback`, installed by
+[`tools/z80recomp/interp.c`](https://github.com/sp00nznet/tirecomp/blob/main/tools/z80recomp/interp.c).
+
+### The over-hinting trap -- more static analysis made it worse
+
+This module told you static analysis is your first line of defense. The
+[Civilization Revolution](https://github.com/sp00nznet/civrev) bring-up is a
+counterexample worth sitting with.
+
+The 360 build hit a wall of static-init thunks around `0x82E80xxx` that function
+discovery had not placed, so every one of them was an unresolved indirect target.
+Two ways forward:
+
+**The static way.** Run a vtable pointer scanner over the read-only data, take
+everything that looks like a code pointer, feed it back as function-entry hints. It
+produced **301** candidates.
+
+**What actually happened.** Feeding in all 301 made the build *worse*. The scanner
+could not tell a vtable slot from a switch/jump-table entry, and jump-table entries
+point into the *middle* of functions. Hinting those split real functions in half and
+turned a loop back-edge into a fatal unresolved call -- a class of bug that did not
+exist before the analysis ran.
+
+**The runtime way.** Boot the game once with a tolerant dispatch scaffold that logs
+every unregistered indirect-call target instead of dying on it. One boot produced the
+complete set: **21** addresses, every one of them a guaranteed-real entry point
+because the guest actually branched there.
+
+Final hint count: 3 codegen-required plus the 21 runtime-verified, **24 total**,
+down from 301. The entire bug class vanished on deletion.
+
+The lesson is not that static analysis is useless. It is that a pointer-shaped
+integer in read-only data is a *guess*, and a logged branch target is an
+*observation*, and if you can afford one boot you should prefer the observation. The
+tolerant-dispatch tier you build for Tier 3 is also your best target-discovery
+instrument -- most treatments of this problem, including section 6 above, present it
+only as a failure handler.
+
+### What a real bring-up looks like by the numbers
+
+Two more from the same family, for scale:
+
+| | [You Don't Know Jack](https://github.com/sp00nznet/ydkj) (360) | [Civilization Revolution](https://github.com/sp00nznet/civrev) (360) |
+|---|---|---|
+| Guest image | 5 MB | 16.8 MB |
+| Recompiled functions | 14,781 | 40,067 |
+| Generated C++ | -- | 231 MB |
+| Output executable | 21 MB | 80 MB |
+| Hand-written kernel stubs | 0 | 1 bundle (`XUsbcam*`) |
+| Codegen hints needed | 1 | 24 |
+| Where it got to | renders its title screen | clean boot into engine init, no render |
+
+Note the hint counts against the function counts. 14,781 functions needed **one**
+hint. Indirect calls are the hardest problem in the field and they are also, on a
+well-behaved binary, a rounding error. The hard part is never the average case.
+
+Note also the honesty in that last row. Neither of these is "done," and both repos
+say so in their own READMEs under a heading called **Honest scope**. When you write
+up your own project, do that.
+
+### Read these next
+
+- xboxrecomp `docs/technical/` -- 19 files, including `rtti-recovery.md` and `register-model.md`
+- xboxrecomp `docs/pipeline/03-function-id.md` -- where the target set comes from in the first place
 ## Lab
 
 The following lab accompanies this module:

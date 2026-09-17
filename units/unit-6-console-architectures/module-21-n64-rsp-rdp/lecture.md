@@ -1213,7 +1213,7 @@ The challenge is that RSP microcode uses self-modifying techniques (writing new 
 
 ### The Hybrid Approach
 
-A few projects have explored hybrid approaches: HLE for known microcodes, falling back to LLE for unknown ones. This gives you the performance of HLE for 90% of games and the compatibility of LLE for the remaining 10%. The switchover can even happen within a single game if it loads different microcodes for different scenes.
+A few projects have explored hybrid approaches: HLE for known microcodes, falling back to LLE for unknown ones. This gives you HLE performance for the microcodes you have implemented and LLE compatibility for everything else. How that splits depends entirely on your library -- see Module 20, where Diddy Kong Racing's `f3ddkr` microcode was unsupported by RT64 and the project wrote its own interpreter instead. The switchover can even happen within a single game if it loads different microcodes for different scenes.
 
 ```c
 void process_rsp_task(RSPTask* task) {

@@ -368,15 +368,113 @@ This is mechanically generated, not hand-written. It is not pretty, but it is co
 
 ## 6. Real-World Reference
 
-Two projects demonstrate Game Boy static recompilation at production quality:
+The Game Boy is the best-documented corner of this corpus, and it is worth reading in
+a specific order.
 
-**gb-recompiled** by sp00nznet is a general-purpose Game Boy recompilation toolkit. It implements the full pipeline described in this module: ROM parsing, recursive descent disassembly with bank tracking, SM83-to-C lifting, and a runtime with PPU rendering, audio, and input. It handles MBC1, MBC3, and MBC5 cartridges and has been used to recompile multiple commercial Game Boy titles into standalone native executables.
+### [gb-recompiled](https://github.com/sp00nznet/gb-recompiled) -- the engine
 
-**LinksAwakening** by sp00nznet is a specific application of Game Boy recompilation to *The Legend of Zelda: Link's Awakening DX*. This project demonstrates the additional complexity that a full commercial game introduces: large ROM with many banks, extensive use of bank switching for both code and data, interrupt-driven audio, and hardware-dependent rendering tricks. It also demonstrates the modifiability advantage of static recompilation -- once the code is in C, enhancements like widescreen rendering and high-resolution output become possible.
+A fork of [arcanite24](https://github.com/arcanite24)'s (Brandon G. Neri) Game Boy
+recompiler. It implements the full pipeline described in this module: ROM parsing,
+recursive descent with bank tracking (`recompiler/src/bank_tracker.cpp`), an SM83 IR
+with optimization passes (`recompiler/include/recompiler/ir/`), a C emitter, and a
+runtime with scanline PPU, 4-channel APU and input. MBC1, MBC3 and MBC5.
 
-Studying these projects will give you a concrete reference for every concept in this module. The code structure, the lifting rules, the runtime architecture -- all of it is implemented and working.
+Its reported figure is **98.94%** of a 1,609-ROM test library recompiling
+successfully -- attached, in the README itself, to the words *"most of the games are
+not fully playable yet."* Recompiling and running are different milestones. This
+module is about the first one; the rest of the course is about the second.
 
----
+### [LinksAwakening](https://github.com/sp00nznet/LinksAwakening) -- a finished game
+
+*Link's Awakening DX*, completely playable start to finish: full CGB colour with
+palette RAM, VRAM banking and HDMA, double-speed mode, 4-channel audio, SRAM saves,
+save states, rebindable gamepad and keyboard, ImGui debug overlay and asset viewer.
+
+The ROM becomes roughly **4.2 million lines of C** -- the project's own figure, and not
+one you can check out, because `rom.c` and `rom_rom.c` are gitignored. They have to be:
+recompiled commercial game code is a derived work and cannot be redistributed, so the
+repository ships the glue and you generate the rest from your own cartridge dump. Module
+27 covers what that means for reading anyone's claims, including your own.
+
+Sit with the number anyway. A 1 MB cartridge, fully lifted, is a source tree larger than
+most operating system kernels.
+
+The repository is also a clean example of a structure you should copy: the game repo
+is **only the game-specific glue**, and `gb-recompiled` is a submodule at `gbrecomp/`.
+Runtime improvements flow to every game; game quirks stay in the game.
+
+And note the honest caveat in its own description: the recompiled code covers the
+program *except* "a small fallback interpreter for the handful of unresolved indirect
+jumps the recompiler can't statically resolve." Compare that with the Xbox approach in
+Module 14, which has **no** interpreter and instead returns zero and keeps going. Both
+are shipping answers to the same problem. Which one you want depends on whether your
+platform's unresolved cases are rare-and-real (keep an interpreter) or
+mostly-garbage-pointers (do not bother).
+
+### Check this claim yourself -- and note that it holds
+
+Modules 11 and 12 are going to show you two toolkits whose "it plays the game" claims
+turn out to mean "an emulator plays the game and occasionally calls our code." Before you
+trust this one, apply the same test. The runtime is small enough to audit in an evening:
+
+```
+runtime/src/gbrt.c          1,503 lines   CPU context, timers, memory map, MBCs
+runtime/src/ppu.c             662 lines   scanline PPU
+runtime/src/audio.c                       4-channel APU
+runtime/src/interpreter.c     781 lines   the fallback
+runtime/src/platform_sdl.cpp              display, input, audio out
+```
+
+**There is no emulator here.** The frame loop is `gbrt.c`, the PPU is `ppu.c`, and the
+recompiled game code drives both. The references to SameBoy, mGBA and BGB scattered
+through those files are *comments* citing them as behavioural references -- a DIV counter
+init value, an LY start state, an `.rtc` sidecar format -- not linked dependencies.
+
+`interpreter.c` is 781 lines: a real SM83 interpreter, bounded, and reachable only via
+`gb_interpret(ctx, addr)` for "uncompiled code." That is a fallback. The mGBA hook in
+Module 12 is a host.
+
+The difference matters for what a screenshot proves. Here, if the recompiled code were
+wrong, nothing would draw -- so the fact that Link's Awakening is playable start to finish
+*is* evidence about the recompiler.
+
+Also worth noticing in that listing: `platform_3ds.c`, `platform_wii.c`,
+`platform_psl1ght.c`, `platform_libxenon.c`. The portability claim below is not
+aspirational -- the backends are in the tree.
+
+### [linksawakening-portable](https://github.com/sp00nznet/linksawakening-portable) -- why C was the right output
+
+This is the one to show someone who asks why you would not "just use an emulator."
+
+The same recompiled *Link's Awakening* runs on **PlayStation 4, PlayStation 3,
+Nintendo 3DS, Nintendo Wii, Sega Dreamcast, Android, and in a browser via
+WebAssembly**, alongside the Windows reference build. Each platform supplies a backend
+implementing one shared interface; the recompiled game itself does not change.
+
+A 1998 Game Boy Color game now runs natively on a 1998 Dreamcast -- in 16 MB of RAM,
+with no Game Boy emulator involved anywhere. That is not a party trick, it is the
+whole thesis: **lifting to C buys you every target a C compiler exists for, forever.**
+An emulator buys you the platforms somebody ports the emulator to.
+
+### [oracle-recompiled](https://github.com/sp00nznet/oracle-recompiled) -- two games, one runtime
+
+*Oracle of Ages* and *Oracle of Seasons* share an engine, so they share a monorepo and
+a runtime and build as two binaries. Both reach interactive overworld gameplay. When
+your next target is a sister title of one you have already done, this is the shape to
+reach for.
+
+### [pokemon-crystal](https://github.com/sp00nznet/pokemon-crystal) -- where the scale goes
+
+The second Generation II title after
+[pokemon-gold](https://github.com/sp00nznet/pokemon-gold), same MBC3+TIMER+RAM+BATTERY
+mapper, same recipe -- and a useful lesson in what drives output size. Gold generates a
+**58 MB** `rom.c`; Crystal generates **85 MB**, and the README names exactly why: the
+Suicune arc, the female protagonist sprite set, expanded Unown handling, mobile-adapter
+scaffolding. More shipped code, more generated code. The final executable is 18.2 MB.
+
+Its status table is also a model for how to track a bring-up honestly, with
+`⏳ user-test` as a distinct state from done -- "I believe this works but nobody has
+played through a save round-trip yet" is real information and deserves its own row.
 
 ## Labs
 

@@ -850,8 +850,10 @@ flowchart TD
 
 **Key References**
 
-- [XenonRecomp](https://github.com/XenonRecomp/XenonRecomp)
-- [360tools](https://github.com/sp00nznet/360tools)
+- [XenonRecomp](https://github.com/hedge-dev/XenonRecomp)
+- [ReXGlue SDK](https://github.com/rexglue/rexglue-sdk)
+- [wormsrevolution](https://github.com/sp00nznet/wormsrevolution) -- playable bring-up
+- [ydkj](https://github.com/sp00nznet/ydkj), [civrev](https://github.com/sp00nznet/civrev), [outrun](https://github.com/sp00nznet/outrun) -- bring-ups at three different stages
 
 ---
 
@@ -956,6 +958,123 @@ The capstone demonstrates the student's ability to generalize the techniques lea
 
 ---
 
+## Semester 3 -- Production Engineering (Modules 33-48)
+
+Semesters 1 and 2 teach how to recompile. Semester 3 is about the engineering that turns a
+working proof of concept into something other people can build, trust, and use --
+automation, evidence, performance, and shipping.
+
+> **Build status:** Units 9 and 10 are written. Units 11 and 12 are outlined below and not
+> yet built. Contributions welcome -- see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
+## Unit 9 -- Automated Pipelines (Modules 33-36)
+
+### Module 33: Automated Disassembly Pipelines
+[Lecture](units/unit-9-automated-pipelines/module-33-automated-disassembly/lecture.md)
+
+Stage-based pipelines over files, container extraction across platforms, function discovery
+as a committed artifact, why runtime observation beats pointer scanning, batch harnesses and
+what corpus-wide numbers actually measure, automated symbol import from decomp projects,
+content-hash caching and provenance.
+
+**Labs:** 51 (pipeline driver with caching), 52 (batch harness with failure categories)
+
+### Module 34: Automated Lifting at Scale
+[Lecture](units/unit-9-automated-pipelines/module-34-lifting-at-scale/lecture.md)
+
+Where instruction semantics should live -- emitter, runtime op kit, or IR. Table-driven
+decoding and generating tables from ISA descriptions. Reusing one CPU front end across many
+machines. Output volume as an engineering problem. Deciding what counts as a function, and
+the four faces of getting it wrong. Generating the runtime.
+
+**Labs:** 53 (table-driven lifter + matching interpreter), 54 (fallthrough detector)
+
+### Module 35: CI/CD for Recompilation Projects
+[Lecture](units/unit-9-automated-pipelines/module-35-ci-for-recomp/lecture.md)
+
+The green badge that tests nothing (a real bug from this repository). What is testable
+without shipping the ROM. Synthetic fixtures. Golden-output tests and their trap. Regression
+gates and status files at scale. Build time as the real constraint. Documentation CI.
+
+**Labs:** 55 (synthetic fixture suite), 56 (break your own CI)
+
+### Module 36: Configuration-Driven Recompilation
+[Lecture](units/unit-9-automated-pipelines/module-36-config-driven-recomp/lecture.md)
+
+The manifest is the project. What belongs in it and what does not. Anatomy of a real config.
+Hint tables as the record of a bring-up. Multi-target and multi-platform builds. Configuring
+the escape hatches. When configuration becomes a program.
+
+**Labs:** 57 (manifest-driven driver), 58 (variant build), 59 (Unit 9 capstone: full CI
+pipeline, then break it at every stage)
+
+---
+
+## Unit 10 -- Quality and Correctness (Modules 37-40)
+
+### Module 37: What "It Works" Means
+[Lecture](units/unit-10-quality-correctness/module-37-what-it-works-means/lecture.md)
+
+When your harness produces your own evidence. Silent fallbacks that make "it runs" meaningless.
+Numbers that overshoot. **The ladder of evidence** -- eight distinct claims projects conflate.
+The ten-minute audit. How to write a claim you can defend.
+
+**Labs:** 60 (audit three projects), 61 (attribution harness)
+
+### Module 38: Differential Testing and Oracles
+[Lecture](units/unit-10-quality-correctness/module-38-differential-testing/lecture.md)
+
+Build the oracle before the lifter. Four kinds of oracle. Choosing a comparison point.
+Bisecting the lifted set. Tripwires for silent corruption. A full debugging campaign read
+commit by commit, including its public retraction. Making re-verification one command.
+
+**Labs:** 62 (interpreter oracle), 63 (bisect harness), 64 (boundary tripwires)
+
+### Module 39: Fuzzing and Divergence Detection *(not yet written)*
+
+Differential fuzzing against an oracle, coverage-guided input generation for game state,
+automatic divergence minimisation, crash triage at scale.
+
+### Module 40: Audio and Timing Accuracy *(not yet written)*
+
+Audio pipeline recompilation (APU, SPU, SCSP, AICA), sample-rate conversion, frame pacing and
+vsync, input latency measurement, and why audio usually comes up before graphics.
+
+---
+
+## Unit 11 -- Performance Engineering (Modules 41-44) *(outlined, not built)*
+
+| Module | Topic |
+|---|---|
+| 41 | Profiling recompiled binaries -- hot paths in generated C |
+| 42 | SIMD: translating guest vector units (VMX, VU, MMI, NEON) to host SIMD |
+| 43 | Memory access optimisation, cache behaviour, guest address space layout |
+| 44 | LTO, PGO, function ordering, dead function elimination at scale |
+
+## Unit 12 -- Shipping and Distribution (Modules 45-48) *(outlined, not built)*
+
+| Module | Topic |
+|---|---|
+| 45 | Legal considerations -- derived works, ship-the-tool-not-the-ROM, license compliance |
+| 46 | Packaging, asset extraction, user-provides-ROM workflows, updates |
+| 47 | User experience and modding support -- resolution, remapping, mod hooks, saves |
+| 48 | Semester 3 project: ship a recompiled game end to end |
+
+---
+
+## Semester 4 -- Frontiers and Research (Modules 49-64) *(planned)*
+
+See [papers/semesters-3-4-plan.md](papers/semesters-3-4-plan.md) for the full outline.
+
+- **Unit 13 (49-52)** Hybrid techniques -- static + dynamic, binary rewriting, decomp-assisted recompilation
+- **Unit 14 (53-56)** Emerging architectures -- leading with the unusual ones: 4-bit CPUs, bytecode targets, and machines with no fixed-function hardware at all
+- **Unit 15 (57-60)** Tooling contributions -- contributing upstream, the stress-target project shape
+- **Unit 16 (61-64)** Original research and capstone
+
+---
+
 ## Assessment Approach
 
 This course is designed for **self-paced learning**. There are no exams. Progress is measured by practical output.
@@ -1051,10 +1170,26 @@ Work through modules in dependency order (see the flowchart above). A reasonable
 | dcrecomp | https://github.com/sp00nznet/dcrecomp | Module 24 |
 | xboxrecomp | https://github.com/sp00nznet/xboxrecomp | Modules 14, 17, 27 |
 | ps3recomp | https://github.com/sp00nznet/ps3recomp | Modules 30, 31 |
-| 360tools | https://github.com/sp00nznet/360tools | Module 28 |
+| ReXGlue SDK | https://github.com/rexglue/rexglue-sdk | Module 28 |
+| wormsrevolution | https://github.com/sp00nznet/wormsrevolution | Module 28 |
+| ydkj | https://github.com/sp00nznet/ydkj | Module 28 |
+| civrev | https://github.com/sp00nznet/civrev | Modules 14, 28 |
+| outrun | https://github.com/sp00nznet/outrun | Module 28 |
 | N64Recomp | https://github.com/N64Recomp/N64Recomp | Modules 1, 6, 14, 18, 19, 20, 21 |
-| XenonRecomp | https://github.com/XenonRecomp/XenonRecomp | Module 28 |
+| XenonRecomp | https://github.com/hedge-dev/XenonRecomp | Module 28 |
 | RT64 | https://github.com/rt64/rt64 | Modules 21, 29 |
 | Capstone | https://www.capstone-engine.org/ | Modules 3, 4, 5, 6 (labs) |
 | Ghidra | https://ghidra-sre.org/ | Modules 5, 16, 32 |
 | SDL2 | https://libsdl.org/ | Module 15 (labs) |
+| apple2recomp | https://github.com/sp00nznet/apple2recomp | Modules 10, 34 |
+| vic20recomp | https://github.com/sp00nznet/vic20recomp | Modules 10, 34, 38 |
+| tirecomp | https://github.com/sp00nznet/tirecomp | Modules 14, 34, 35 |
+| mariopaint | https://github.com/sp00nznet/mariopaint | Modules 11, 36, 38 |
+| encarta | https://github.com/sp00nznet/encarta | Modules 13, 18, 38 |
+| xboxdashboard | https://github.com/sp00nznet/xboxdashboard | Modules 27, 37 |
+| burnout3 | https://github.com/sp00nznet/burnout3 | Modules 14, 27, 37 |
+| xwa | https://github.com/sp00nznet/xwa | Modules 27, 37 |
+| diddykongracing | https://github.com/sp00nznet/diddykongracing | Modules 20, 37 |
+| flow | https://github.com/sp00nznet/flow | Modules 15, 30 |
+| tokyojungle | https://github.com/sp00nznet/tokyojungle | Modules 30, 37 |
+| ducktales | https://github.com/sp00nznet/ducktales | Modules 30, 34 |

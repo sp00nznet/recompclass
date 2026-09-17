@@ -43,16 +43,52 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install capstone pefile
+          pip install capstone pefile pytest
 
-      - name: Run Python labs
+      # The lab sources are deliberately TODO stubs, so their tests are SUPPOSED to
+      # fail until a student fills them in. CI therefore gates on the two things that
+      # are always meant to hold: every lab module imports, and every test file can be
+      # collected. Running `python test_lab.py` (as this job used to) executed nothing
+      # at all and passed unconditionally.
+      - name: Check every lab module imports
         run: |
+          python - <<'EOF'
+          import importlib.util, pathlib, sys
+          bad = []
+          for f in sorted(pathlib.Path("labs").glob("lab-*/*.py")):
+              if f.name == "test_lab.py":
+                  continue
+              sys.path.insert(0, str(f.parent))
+              spec = importlib.util.spec_from_file_location(f"{f.parent.name}_{f.stem}", f)
+              mod = importlib.util.module_from_spec(spec)
+              try:
+                  spec.loader.exec_module(mod)
+              except Exception as e:
+                  bad.append(f"{f}: {type(e).__name__}: {e}")
+              finally:
+                  sys.path.pop(0)
+                  sys.modules.pop(spec.name, None)
+          for b in bad:
+              print("BROKEN:", b)
+          sys.exit(1 if bad else 0)
+          EOF
+
+      # One pytest process per lab: each lab directory owns its own module namespace,
+      # and several labs share file names (simple_isa.py), so a single run would
+      # collide on basenames.
+      - name: Check every lab test file collects
+        run: |
+          status=0
           for dir in labs/lab-*/; do
             if [ -f "$dir/test_lab.py" ]; then
-              echo "Testing $dir..."
-              python "$dir/test_lab.py" || exit 1
+              if ! python -m pytest "$dir" --collect-only -q > /dev/null 2>&1; then
+                echo "BROKEN: $dir does not collect"
+                python -m pytest "$dir" --collect-only -q 2>&1 | grep -E '^E ' | head -3
+                status=1
+              fi
             fi
           done
+          exit $status
 
   validate-mermaid:
     runs-on: ubuntu-latest

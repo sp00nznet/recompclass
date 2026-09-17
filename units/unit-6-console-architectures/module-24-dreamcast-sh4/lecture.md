@@ -1676,17 +1676,46 @@ Dreamcast static recompilation is less mature than N64 or GameCube recompilation
 
 That said, the Dreamcast is a tractable target. The SH-4 is a clean architecture with regular instruction encoding. The 16-bit instruction size makes for compact code sections. And the TBDR approach, while different, is actually well-documented thanks to the PowerVR SDK and the KallistiOS project.
 
-### dcrecomp
+### [dcrecomp](https://github.com/sp00nznet/dcrecomp)
 
-The dcrecomp framework is the primary toolchain for Dreamcast static recompilation. It provides:
+The framework for Dreamcast and Naomi targets. Both boards share the core hardware --
+SH-4 (SH7091) at 200 MHz, PowerVR2 "Holly" with the tile accelerator, Yamaha AICA
+(an ARM7 plus a 64-channel DSP), 16 MB of RAM on Dreamcast and 32 MB on Naomi -- so one
+framework covers a console and an arcade board.
 
-- Binary parser for flat 1ST_READ.BIN files and WinCE PE executables
-- SH-4 disassembler with delay slot awareness
-- Instruction lifter handling all SH-4 modes (FPU bank switching, precision modes)
-- PowerVR2 graphics shim with OpenGL backend
-- AICA audio HLE
-- GD-ROM filesystem shim
-- Controller input via SDL2
+It provides a binary parser for flat `1ST_READ.BIN` files and WinCE PE executables, an
+SH-4 disassembler with delay slot awareness, a lifter handling FPU bank switching and
+precision modes, a PowerVR2 shim, AICA audio HLE, a GD-ROM filesystem shim, and SDL2
+input. `include/hal/naomi_io.h` covers Naomi's JVS I/O.
+
+### [crazytaxi](https://github.com/sp00nznet/crazytaxi) -- and why it is here
+
+*Crazy Taxi* (1999), **12,750 functions** lifted and compiled by MSVC with no
+interpreter and no JIT. Its README opens by telling you what it cannot do:
+
+> **This one does not draw a frame yet.** It boots, sets up its interrupt handler, reads
+> the disc and gets a long way into initialisation, then stops in a wait loop it never
+> leaves. If you want to see the framework actually rendering a game, that is the ChuChu
+> Rocket project, which does.
+
+Where it actually gets to is still substantial: links and runs with no unresolved calls
+on the interrupt path, registers the VBlank handler the game expects at `VBR+0x600` and
+takes interrupts, reads the GD-ROM filesystem, clears the first initialisation wait loop
+at `0x8C1583F8`, and gets its first packets into the tile accelerator.
+
+Two things to take from it. First, **"stops in a wait loop it never leaves" is the
+characteristic SH-4 failure**, and it is almost always an interrupt or a hardware
+register the game is polling that your shim never changes -- the CPU is fine, something
+it is waiting for does not exist. Second, note that the project names a *different*
+project as the one to look at if you want to see rendering. Pointing people away from
+your own repo when it is not the best example is worth more than a good screenshot.
+
+### Dreamcast's other targets
+
+The VMU is its own recompilation problem and has its own toolkit:
+[vmurecomp](https://github.com/sp00nznet/vmurecomp) targets the Sanyo LC8670 inside the
+memory card. It is a useful reminder that "the Dreamcast" is several processors, and
+that the small ones are good practice.
 
 ### Dreamcast Emulator Heritage
 

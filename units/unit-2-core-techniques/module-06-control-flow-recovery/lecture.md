@@ -407,7 +407,7 @@ Where you seed the worklist depends on the platform:
 
 ### Weaknesses
 
-**Coverage depends on entry points.** If you don't know about a function -- because it's only called through a function pointer or a jump table -- recursive descent will never visit it. You can miss significant portions of the code. In some Game Boy games, 10-20% of functions are reached only through indirect calls.
+**Coverage depends on entry points.** If you don't know about a function -- because it's only called through a function pointer or a jump table -- recursive descent will never visit it. You can miss significant portions of the code, and the amount you miss is a property of the individual program, not of the platform. Pokémon-class Game Boy RPGs lean hard on computed jumps and were the motivating case for gb-recompiled's `JP HL` solver; plenty of other Game Boy titles have almost none. Measure your binary; do not budget from a rule of thumb.
 
 **Indirect branches are opaque.** When you encounter `JP (HL)` on SM83 or `jr $t0` on MIPS, you don't know where control is going. The worklist gets no new entries from that instruction, so any code reachable only through that indirect branch is invisible.
 
@@ -1306,7 +1306,16 @@ When the flag state is unknown (function entry from an unknown caller, or after 
 2. Track all possible states through the CFG and fork if they diverge.
 3. Require manual annotation.
 
-This is one of the hardest problems in SNES recompilation. The `snesrecomp` project allows manual flag annotations at function boundaries.
+This is one of the hardest problems in SNES recompilation, and it is worth seeing how [snesrecomp](https://github.com/sp00nznet/snesrecomp) sidesteps it rather than solving it. Its CPU state keeps `flag_M` and `flag_X` as ordinary **runtime** booleans (`include/snesrecomp/cpu.h`), and the op kit reads them at execution time:
+
+```c
+bool flag_X;  /* Index register size (1=8-bit) */
+bool flag_M;  /* Accumulator size (1=8-bit) */
+```
+
+So `REP`/`SEP` are just writes to those booleans and every width-sensitive operation branches on them. The static analysis problem does not have to be solved because the width decision was deferred to runtime -- at the cost of a branch per access that a statically-resolved build would not pay.
+
+That trade recurs constantly in this field: **when static analysis is hard, check whether you can make the question a runtime one instead.** You usually can, and it usually costs performance you can measure rather than correctness you cannot.
 
 ---
 

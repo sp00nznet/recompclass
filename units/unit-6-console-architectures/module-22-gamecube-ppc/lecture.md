@@ -2103,29 +2103,66 @@ Your runtime needs to map these to host threading primitives (pthreads on Linux/
 
 ## 9. Real-World GameCube Recompilation Projects
 
-### gcrecomp Framework
+### [gcrecomp](https://github.com/sp00nznet/gcrecomp) -- the toolkit
 
-The gcrecomp framework is the primary toolchain for GameCube static recompilation. It handles:
-- DOL and ELF parsing with REL support
-- Full PowerPC 750CXe instruction lifting including paired singles
-- GX graphics shimming with OpenGL and Vulkan backends
-- Audio HLE for standard Nintendo AX microcode
-- Controller input via SDL2
-- Memory card emulation
+DOL and ELF parsing with REL support, full PowerPC 750CXe lifting including paired
+singles, GX graphics translation to D3D11 with **TEV shader generation**, DSP ADPCM
+audio decoding and voice mixing, SDL2 input, and Dolphin OS HLE covering heap, DVD,
+threads and timing.
 
-The framework is designed to be game-agnostic -- you point it at a DOL, provide a symbol file, and it produces the generated C code. The game-specific work is in providing accurate symbols and handling any game-specific quirks in the runtime.
+TEV shader generation is the part to understand. The GameCube's GX is a
+*configurable* pipeline, not a programmable one -- a game sets up TEV stages, and
+translating that means **generating HLSL from the game's own stage configuration at
+runtime**. You are not porting shaders; you are writing a compiler from one shading
+model to another. Module 29 goes deeper.
+
+### [ww](https://github.com/sp00nznet/ww) -- the honest caveat is the lesson
+
+*The Legend of Zelda: The Wind Waker*. It renders real island geometry in a native Win32
+window: `Stage.arc` and `Room44.arc` read from a real disc image, Yaz0-decompressed,
+J3D/BDL parsed, CMPR textures decoded, and shaded by HLSL generated from the game's own
+TEV configuration. That is the whole GameCube asset and graphics stack working.
+
+And then its README says this:
+
+> **Honest caveat:** this is the renderer, not the game. The frame loop is being driven
+> by us rather than by the title screen's own state machine, and the black spiral is a
+> water/skybox texture we still map wrong.
+
+That distinction -- *the renderer, not the game* -- is one you will have to make about
+your own project, probably while looking at a screenshot that makes it very tempting not
+to. If your code is driving the frame loop, the game's state machine is not running, and
+what you have proven is that your asset pipeline and graphics translation work. That is
+a real and substantial result. It is not "the game runs," and the gap between them is
+usually months.
+
+Compare with the xboxdashboard retraction in Module 27, which is the same mistake caught
+one step later.
+
+### [luigismansion](https://github.com/sp00nznet/luigismansion) -- what a finished decomp buys you
+
+Chosen deliberately because the [Yasiki](https://github.com/Moddimation/Yasiki)
+decompilation project is **100% complete**. That means every function has a known name
+and signature, all data structures are documented, and there is a complete symbol map --
+so there are no unknown functions to discover heuristically at all.
+
+Read that against Module 20's `racer`, which has no decompilation and had to find 878
+functions itself and then hand-fix 143 bad splits. Same era, same class of console,
+completely different project.
+
+**When you are choosing a target, check for a decomp project first.** A completed
+decompilation does not do the recompilation for you, but it deletes the entire function
+discovery problem -- which is Modules 6, 14 and half your schedule.
 
 ### Community Decompilation Projects
 
-The GameCube recompilation community benefits enormously from decompilation projects. Games like *The Wind Waker*, *Twilight Princess*, *Metroid Prime*, *Super Mario Sunshine*, *Paper Mario: TTYD*, and *Melee* have active decompilation efforts that produce symbol files, function names, and even matching C source code.
+The GameCube scene benefits enormously from this. *The Wind Waker*, *Twilight Princess*,
+*Metroid Prime*, *Super Mario Sunshine*, *Paper Mario: TTYD* and *Melee* all have active
+decompilation efforts producing symbol files, function names, and sometimes matching C.
 
-These decompilation projects provide:
-- Complete function boundary information
-- Meaningful function and variable names
-- Data structure definitions
-- Understanding of game-specific algorithms and data formats
-
-If your target game has an active decompilation project, use it. The symbol files alone save weeks of work.
+These provide complete function boundaries, meaningful names, data structure definitions,
+and an understanding of game-specific formats. If your target has one, use it -- the
+symbol files alone save weeks.
 
 ### Using Decompilation Symbols in gcrecomp
 

@@ -1665,11 +1665,59 @@ Having done both Game Boy and NES recompilation, you can now see the patterns th
 
 ### Existing Projects
 
-NES recompilation is less common than Game Boy or N64 recompilation in the public scene, partly because NES emulation is so mature and performant that the performance motivation is weak. The preservation and modifiability motivations are stronger: having NES game code in C allows porting to platforms without emulators, adding enhancements (widescreen, HD rendering, network multiplayer), and studying the code.
+NES recompilation is less common in the public scene than Game Boy or N64, partly
+because NES emulation is so mature and fast that the performance argument is weak. The
+preservation and modifiability arguments are the strong ones.
 
-**ZELDA-NES-RECOMP** and similar projects have demonstrated that NES recompilation is feasible for major titles. The key challenges are always the same: mapper support, PPU timing, and handling the handful of indirect jumps and RAM-executed code that each game uses.
+But the 6502 itself is extremely well covered, and the closest working references are
+two other 6502 machines rather than the NES. Read both -- what you learn transfers
+almost entirely, because it is the same CPU and the same class of problem.
 
-The NES homebrew community has also contributed to recompilation tooling. Tools like **da65** (from the cc65 suite) provide excellent 6502 disassembly, and the extensive documentation at **NESdev Wiki** (nesdev.org) provides the hardware reference needed to build accurate PPU and APU shims.
+**[apple2recomp](https://github.com/sp00nznet/apple2recomp)** is the more interesting
+of the two, because the Apple II removes the two things this module has been assuming:
+
+> Most static recompilers target cartridge consoles: the whole game is a ROM, you
+> translate the one CPU to C, and you emulate the fixed-function video/audio chips as
+> peripherals. The Apple II (1977) is a harder, more interesting target, because there
+> *is* no cartridge and there *are* no fixed-function chips.
+
+No cartridge means there is no single ROM image to disassemble -- the game arrives off
+a 5.25" DOS 3.3 floppy, **one 256-byte sector at a time**, and you have to reconstruct
+what ends up in memory before you can lift any of it. No fixed-function chips means
+there is no PPU to shim: the screen and the speaker are just regions of RAM that the
+hardware scans out. Your "graphics shim" is a function that reads the hi-res page and
+draws pixels, and your "audio shim" watches a soft-switch toggle.
+
+Its flagship port,
+[choplifter-apple2-recomp](https://github.com/sp00nznet/choplifter-apple2-recomp)
+(Broderbund, 1982), is reported as **~99.8% native C** and fully playable in colour with
+an SDL frontend and save states.
+
+Note "reported": that repository commits one source file (`games/choplifter/src/host.c`)
+and gitignores the generated output, as a game port has to. The figure is the author's
+measurement, not something you can re-derive from the repo -- see Module 27 on reading
+these claims. **The toolkit is the auditable part**, and it is the part you are here to
+learn from.
+
+**[vic20recomp](https://github.com/sp00nznet/vic20recomp)** is the same 6502 front-end
+pointed at a simpler machine -- and the reuse is the lesson. Its README is explicit
+that the decoder, the flag-correct ALU, the analyzer, the C emitter and the
+**interpreter oracle** are the same components that recompiled Choplifter; only the
+machine around them changed. A VIC-20 cartridge is self-contained (the 6502 reads a
+cold-start vector at `$A000` and goes), so it is strictly easier than the Apple II.
+[jellymonsters-vic20-recomp](https://github.com/sp00nznet/jellymonsters-vic20-recomp)
+is reported at ~100% recompiled code, rendering its maze in colour -- again a single
+committed `host.c` with the generated source held back.
+
+That phrase **interpreter oracle** is worth flagging now and remembering for Module 18.
+It means a reference 6502 interpreter kept around specifically so the recompiled output
+can be diffed against it instruction by instruction. On a CPU this well understood
+there is no excuse for guessing whether your `ADC` decimal-mode flags are right -- you
+run both and compare.
+
+The NES adds a PPU with real timing and a mapper zoo on top of exactly this 6502 work.
+Tools like **da65** (from cc65) give solid 6502 disassembly, and the **NESdev Wiki**
+(nesdev.org) is the hardware reference you will need for the PPU and APU shims.
 
 ### Leveraging Existing Emulator Infrastructure
 

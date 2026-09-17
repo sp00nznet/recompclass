@@ -247,7 +247,7 @@ These require custom handling in the translation layer. Register combiners map t
 
 ## 6. Scale: 22,000 Functions
 
-A large Xbox game can have approximately 22,000 functions in its code section. This scale introduces practical engineering challenges beyond the algorithmic challenges of recompilation.
+*Burnout 3* has 22,097 functions in its code section. This scale introduces practical engineering challenges beyond the algorithmic challenges of recompilation.
 
 ### Compilation Time
 
@@ -271,7 +271,7 @@ Without mitigation strategies, every change to the runtime triggers a full rebui
 
 ```mermaid
 flowchart TD
-    XBE["XBE Binary\n~22,000 functions"] --> Recomp["Recompiler"]
+    XBE["XBE Binary\n22,097 functions"] --> Recomp["Recompiler"]
     Recomp --> Files["22,000 .c files\nOne per function"]
     Files --> PCH["Precompiled Headers\nContext struct, runtime API"]
     PCH --> Parallel["Parallel Compilation\n(make -j16)"]
@@ -291,47 +291,206 @@ flowchart TD
 
 ## 7. Real-World Projects
 
-### xboxrecomp
+### [xboxrecomp](https://github.com/sp00nznet/xboxrecomp) -- the framework
 
-The general framework for Xbox static recompilation. It provides:
+XBE parsing, x86-32 disassembly and function identification, lifting to C on a global
+register model, and a runtime with kernel shims and D3D8 translation. Everything else
+in this section builds on it.
 
-- XBE parser
-- x86-32 disassembler with function identification
-- Instruction lifter to C (global register model)
-- Runtime framework with kernel shims and D3D8 translation
+It is also the best-documented toolkit in the corpus. Before doing anything else, read
+`docs/pipeline/` (six numbered files, XBE parsing through debugging) and
+`docs/technical/` (nineteen files). Several of them are the primary source for other
+modules: `indirect-calls.md` for Module 14, `register-model.md` for this module's
+global-register discussion, `rtti-recovery.md`, `seh-handling.md`,
+`memory-layout.md`, `conformance-testing.md`.
 
-All other Xbox recompilation projects build on this framework.
+### [burnout3](https://github.com/sp00nznet/burnout3) -- what is real and what is harness
 
-### burnout3 (Burnout 3: Takedown)
+*Burnout 3: Takedown* (Criterion / EA, 2004). This is the largest Xbox effort in the
+corpus, and it needs reading carefully, because the parts that are solid and the parts
+that are scaffolding sit in the same repository.
 
-Burnout 3 is one of the most ambitious Xbox recompilation targets:
+**Verifiable from the code and the toolkit docs:**
 
-- **Approximately 22,000 functions** -- one of the largest Xbox codebases encountered
-- Extremely performance-sensitive: the game runs at 60 FPS with aggressive LOD streaming
-- Heavy use of SSE/SSE2 instructions (the Pentium III in the Xbox supports SSE)
-- Complex audio system with real-time mixing of engine sounds, crashes, and music
-- Vertex and pixel shaders for visual effects (heat haze, motion blur)
+- **22,097 functions** lifted from 2.73 MB of x86 and compiled into a native x86-64
+  binary. The dispatch table in `xboxrecomp`'s `docs/technical/indirect-calls.md` is
+  built from exactly this set.
+- **147 kernel imports** mapped to Win32.
+- The Xbox's **64 MB of RAM reproduced with `CreateFileMapping` and mirror views**, so
+  guest pointers work at the addresses the guest expects.
+- `src/game/main.c` is a real host: it loads the XBE, builds the Xbox memory layout,
+  brings up the kernel replacement, D3D8→D3D11, DirectSound→XAudio2 and XInput, and then
+  calls the game's recompiled entry point.
+- The measured indirect-call work in Module 14 -- the garbage-pointer range check taking
+  failures from 180 to 121 per 2-second window -- came from this game.
 
-### pcrecomp
+**Not what the screenshots show.** The README presents the main menu -- logo, all five
+options, button prompts -- as recompiled output. Open `src/game/fe_menu.c` and it
+describes itself:
 
-A related project that targets PC x86-32 executables rather than Xbox XBE files. It shares the same global register model and code generation approach but skips the kernel shimming (PC games use Win32 directly). This demonstrates that the same-ISA recompilation technique generalizes beyond the Xbox.
+> Renders a functional menu UI when the game is in frontend state. Detects menu state via
+> camera pointer (`0x4D4008` = menus) and renders using the D3D8→D3D11 layer with textures
+> from `Global.txd`.
 
-### sof (Soldier of Fortune)
+The menu text is a hardcoded array in the harness:
 
-Soldier of Fortune on Xbox:
+```c
+static const char *g_main_menu_labels[FE_MAIN_ITEMS] = { ... };
+```
 
-- **Approximately 14,000 functions**
-- Quake III engine derivative -- well-understood codebase structure
-- Tests the D3D8 translation layer with a wide range of rendering techniques
-- Network code (originally Xbox Live-enabled) requires stubbing
+and the cursor movement and selection are hand-written too. The harness watches a game
+state address, decides the game is "in menus," and **draws its own menu** using the real
+game's textures. The screenshot is genuine pixels from genuine assets -- and the game's
+own frontend code is not what put them there.
 
-### xwa (X-Wing Alliance)
+The same applies to most of `src/game/`: `rw_renderer.c` (1,919 lines), `rw_bridge.c`
+(1,068), and the `txd_loader.c` / `awd_loader.c` / `track_loader.c` / `video_player.c`
+family are a hand-written RenderWare renderer and asset pipeline. They read the game's
+real files and draw them. That is a substantial achievement and it is **not the same
+claim** as "the recompiled game renders its menu."
 
-An interesting case -- X-Wing Alliance is a PC game that was never on Xbox, but uses the same pcrecomp pipeline for x86-32 to x86-64 recompilation:
+### How to tell, on any project, in about ten minutes
 
-- **Approximately 8,000 functions**
-- DOS/Win9x-era code with DirectDraw and Direct3D immediate mode
-- Legacy API translation challenges (DirectDraw to modern D3D)
+This is the generalisable skill, and it works on your own repo too.
+
+**First, know what you are allowed to see.** Recompiled output from a commercial game is
+a derived work and cannot be redistributed, so most game-port repositories deliberately
+gitignore it. `LinksAwakening` ignores `rom.c` and `rom_rom.c`; `oracle-recompiled`
+ignores `oracle_of_ages.c`; `lttp-recompiled` ignores `recomp_out/`. Those repos ship
+only the harness, and that is the correct and legal choice.
+
+The consequence matters: **for most ports, you cannot verify the headline numbers from
+the repository at all.** "4.2 million lines of C" and "99.8% native" are claims about a
+file that is not there. Treat them as reports, not evidence, and say so when you repeat
+them.
+
+Some projects do commit everything -- `diddykongracing` ships `RecompiledFuncs/funcs_0.c`
+through `funcs_16.c`, megabytes of generated C, and is the most auditable port in the
+corpus. When a project makes that choice, its claims are checkable and worth more.
+
+So the test is:
+
+1. **Check the `.gitignore` first.** It tells you whether the interesting half of the
+   project is even present, and therefore what any other observation can prove.
+2. **`ls src/` for hand-written names.** `fe_menu.c`, `rw_renderer.c`,
+   `static_textures.c` are harness. Generated output is thousands of `sub_XXXXXXXX`
+   functions in numbered files. **This is how burnout3 gives itself away** -- the
+   generated code is gitignored, but the hand-written menu is committed.
+3. **`wc -l` the two groups.** A large harness beside an absent recompilation means the
+   screenshots are probably from the harness.
+4. **Audit the toolkit, not the port.** You usually cannot read the port, but the
+   toolkit it sits on is fully public. If the toolkit is emulator-hosted (Modules 11 and
+   12), no port built on it can claim more than the toolkit allows -- regardless of what
+   its README says.
+5. **Find the fallback and check whether it is silent.** If unresolved or crashing
+   functions quietly hand off to an interpreter or a stub, "it runs" is compatible with
+   nothing being recompiled at all.
+6. **Ask what is driving the frame loop** -- the game's state machine, or your code?
+   Module 22's Wind Waker project answers this about itself, unprompted.
+7. **Look for the counters.** A project that knows how much of itself is real prints
+   `successful` and `failed`. One that does not, has not asked.
+
+None of this makes these projects less impressive. It makes the claims checkable, which
+is the difference between a portfolio and a result.
+
+### [xboxdashboard](https://github.com/sp00nznet/xboxdashboard) -- read this one for the retraction
+
+The original Xbox Dashboard (`xboxdash.xbe`, build 3944). Technically it is further
+along than it sounds: full init chain, scene graph built from its own `default.xip`, all
+67 audio files loaded, frame loop reached, and a render that produces a real NV2A
+command stream -- **1,465 words, 360 distinct methods, 0 unrecognised** -- clearing a
+1280x960 surface to opaque black.
+
+But the reason it is in this course is the notice at the top of its README:
+
+> An earlier version of this README claimed a "green orb at 60fps". That orb was ours --
+> a hand-written disc drawn by scaffolding in this repo, not by the dashboard. It has
+> been deleted, along with the fake scene root, hand-rolled asset loader and 2,204
+> return-zero stubs that surrounded it. Treat any screenshot from before 2026-09-02 as
+> retired.
+
+Read that twice. The project had a picture on screen at 60 fps and the picture was
+**its own scaffolding**, drawn by 2,204 return-zero stubs standing in for the program.
+The correction was not a quiet edit -- the claim was retracted in public, the
+scaffolding deleted, and the old screenshots explicitly marked retired.
+
+This is the characteristic failure mode of recompilation work, and it is worth naming:
+**your harness can produce the evidence you were hoping to see.** Stubs that return zero
+let a program proceed; scaffolding that draws something makes a window look alive. The
+current README's framing is the antidote -- "the stream contains 0 draws, so no geometry
+has been submitted yet, and nothing in this repo has ever put a pixel on screen that the
+dashboard did not ask for." Attribute every observed behaviour to *the guest* or to
+*your own code*, explicitly, before you believe it.
+
+### [hl2-recomp](https://github.com/sp00nznet/hl2-recomp) and [crimsonskies-recomp](https://github.com/sp00nznet/crimsonskies-recomp)
+
+Two more titles on the same toolkit -- *Half-Life 2* (Xbox, 2005) and *Crimson Skies:
+High Road to Revenge* (2003). Useful for seeing which parts of the runtime are genuinely
+reusable across titles and which keep getting rewritten per game.
+
+### [pcrecomp](https://github.com/sp00nznet/pcrecomp)
+
+Targets PC x86-32 executables rather than XBE files. Same global register model and code
+generation, no kernel shimming, because PC games call Win32 directly. Proof that the
+same-ISA technique generalises off the Xbox.
+
+### [xwa](https://github.com/sp00nznet/xwa) (X-Wing Alliance)
+
+*Star Wars: X-Wing Alliance* (1999) was never on Xbox -- it runs the same x86-32 to
+x86-64 pipeline against a PC binary, and it is the best example in the corpus of the
+step this module has not mentioned yet: **getting the code out at all.**
+
+| Phase | Result |
+|---|---|
+| Binary analysis, PE parsing, section mapping | complete |
+| **SafeDisc decryption, memory dump from runtime** | complete |
+| Function discovery | 2,674 functions, 443,224 instructions |
+| Code generation | 2,701 functions, **606,424 lines of C** |
+| Compile and link | 0 errors, 1 warning |
+| Runtime, Win32/DirectX HAL, D3D11 backend | complete |
+| Frontend, concourse, menus, flight entry | complete |
+| Visible 3D flight | in progress |
+
+Phase 1 is the one to notice. The shipping executable is **SafeDisc-encrypted**, so
+there is no code in the file to disassemble. The approach was not to defeat the
+protection statically -- it was to let the program decrypt itself, then **dump the
+process memory** and recompile what was actually running.
+
+That generalises to every protected binary you will meet. The loader's job is to produce
+plaintext code in memory; your job is only to be there when it does. Static unpacking is
+a separate and much harder research problem, and you rarely need to solve it.
+
+Phases 2 and 3 are also worth noting for a reason this module has not raised: function
+discovery found **2,674** functions and code generation emitted **2,701**. Codegen
+produced *more* functions than discovery found -- the extra ones came from splitting at
+branch targets. Module 20 explains why that number drifting upward is a warning sign, not
+a win.
+
+**And then read `src/game/main.c` before you read the flight screenshots.** It is 5,037
+lines of committed harness, and its comments are more honest than the README:
+
+- `xwa_native_mesh -- draw the game's own loaded OPT geometry (XWA_NATIVEDRAW)`. The
+  harness walks the engine's loaded models and draws them itself.
+- `Per-object stand-in scene records` and a helper answering *"Is this pointer one of
+  **OUR fabricated** stand-in scene records (rather than a real one the engine made)?"*
+- `Starfield: without it a correct scene still reads as an empty blue void.` Hand-written.
+- `xwa_craft_opt(unsigned type)` -- a hand-written craft-type to model-path mapping.
+- `xwa_drive_render` -- the harness drives the render path.
+
+So the OPT geometry and the 1999 textures are genuinely the game's data, and the thing
+putting them on screen is `main.c`. Same shape as `burnout3` and the retracted
+`xboxdashboard` orb.
+
+**That is three out of three on this platform**, and the reason is structural rather than
+careless. On Xbox and Win32 the graphics path is COM -- `com_mocks.c` here is 144 KB of
+interface mocks -- and a COM vtable is exactly the indirect-dispatch case Module 14 says
+is hardest. When the game's own renderer will not run yet, reading its loaded assets and
+drawing them yourself is the obvious way to make progress, and it produces a screenshot
+that looks like success.
+
+It is legitimate work. Label it. This project does, in its comments -- including
+`No measurement has pinned this constant, so it stays a knob` about its OPT unit scale,
+which is the right way to record a guess.
 
 ### Lessons Learned
 
