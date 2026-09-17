@@ -66,3 +66,51 @@ Be respectful, constructive, and focused on growing the community. We are all he
 ## Questions?
 
 Open an issue with the "question" label.
+
+---
+
+## Labs and Reference Solutions
+
+Each lab ships a stub whose unimplemented functions end in a `# TODO:` block.
+**The stub's tests are supposed to fail** until you fill them in -- that is the
+exercise, not a bug.
+
+Reference solutions live in `labs/lab-NN/solution/`. Try the lab first; the
+solution is there so you can check your work and so CI has something real to
+gate on.
+
+### Working on labs
+
+```bash
+pytest labs/lab-01                 # run one lab's tests against your work
+python tools/check_solutions.py    # run every lab's tests against its solution
+python tools/check_solutions.py lab-04   # just one
+```
+
+`check_solutions.py` swaps the solution into the lab directory, runs pytest, and
+swaps the stub back. The lab tests do a plain `import <module>` and rely on
+pytest putting the test file's own directory on `sys.path`, so swapping is the
+only reliable way to exercise the solution.
+
+### Changing a lab
+
+Solutions are **generated**, not hand-maintained:
+
+```bash
+python tools/make_solutions.py           # regenerate all solutions
+python tools/make_solutions.py --check   # verify they are current (CI does this)
+```
+
+The implementations live in the patch table in `tools/make_solutions.py`. If you
+change a stub's shape, regenerate -- and if the generator can no longer find a
+function's TODO block it fails loudly rather than emitting a solution that no
+longer matches the exercise.
+
+Bodies in that table are raw strings, so a backslash in a body is a backslash in
+the generated file.
+
+### What CI checks
+
+CI cannot run the labs to completion (that needs the stubs filled in), so it
+gates on what is always true: every lab module imports, every test file
+collects, the solutions are current, and every solution passes its own tests.

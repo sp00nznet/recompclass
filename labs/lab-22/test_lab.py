@@ -47,7 +47,7 @@ class TestGetAllFunctions:
     def test_main_address(self):
         result = export_functions.get_all_functions(PROGRAM)
         main_func = [f for f in result if f["name"] == "main"][0]
-        assert main_func["address"].upper() == "0x08000100"
+        assert main_func["address"].lower() == "0x08000100"
 
     def test_sizes(self):
         result = export_functions.get_all_functions(PROGRAM)

@@ -10,6 +10,9 @@ import unittest
 from mz_parser import MZParser, MZHeader, RelocationEntry, MZ_MAGIC
 
 
+FIXED_HEADER_SIZE = 0x1C   # MZ fixed header is 28 bytes; the relocation table follows it
+
+
 def build_mz_binary(
     num_relocs=0,
     reloc_entries=None,
@@ -23,22 +26,22 @@ def build_mz_binary(
     """
     Helper to build a minimal MZ binary for testing.
 
-    The header is always 2 paragraphs (32 bytes).
-    Relocation table starts at offset 0x1C (right after the fixed header).
+    Lays out a faithful MZ: the 28-byte fixed header, the relocation table
+    immediately after it at 0x1C, padding to a paragraph boundary, then the
+    code image. header_paragraphs covers the header *and* the relocation
+    table -- which is what makes 0x1C the correct table offset.
     """
     if reloc_entries is None:
         reloc_entries = []
 
-    header_para = 2  # 32 bytes
     reloc_data = b""
     for offset, segment in reloc_entries:
         reloc_data += struct.pack("<HH", offset, segment)
 
-    # Total file content: header + reloc entries + code
-    total_data = bytearray(header_para * 16)
-    # We will build the header into total_data, then append reloc + code.
+    # The header paragraphs must cover the fixed header *and* the reloc table.
+    header_para = (FIXED_HEADER_SIZE + len(reloc_data) + 15) // 16
 
-    image = reloc_data + extra_header_data + code
+    image = extra_header_data + code
     full_file = bytes(header_para * 16) + image
 
     # Calculate pages and last-page bytes
@@ -59,16 +62,14 @@ def build_mz_binary(
         0,          # Checksum
         initial_ip,
         initial_cs,
-        0x1C,       # Relocation table offset
+        FIXED_HEADER_SIZE,   # Relocation table offset (0x1C)
         0,          # Overlay number
     )
 
-    # Overwrite the header portion
-    result = bytearray(header)
-    # Pad to 32 bytes
-    result += b"\x00" * (header_para * 16 - len(header))
-    # Append image (reloc entries + code)
-    result += image
+    result = bytearray(header)          # 28 bytes
+    result += reloc_data                # relocation table at 0x1C
+    result += b"\x00" * (header_para * 16 - len(result))   # pad to paragraph
+    result += image                     # code image starts here
 
     return bytes(result)
 
@@ -194,19 +195,48 @@ class TestCodeImage(unittest.TestCase):
         # The image starts after the header; code is at the end of the image
         self.assertTrue(image.endswith(code))
 
-    def test_apply_relocations_not_implemented(self):
-        data = build_mz_binary(code=b"\x90")
+    def test_apply_relocations_adds_load_segment(self):
+        # One relocation pointing at the first word of the image, which holds
+        # segment 0x0000. Loading at 0x1000 must rewrite it to 0x1000.
+        data = build_mz_binary(
+            num_relocs=1,
+            reloc_entries=[(0x0000, 0x0000)],
+            code=struct.pack("<H", 0x0000) + b"\x90" * 14,
+        )
         parser = MZParser(data)
         parser.parse()
-        with self.assertRaises(NotImplementedError):
-            parser.apply_relocations()
+        image = parser.apply_relocations(load_segment=0x1000)
+        self.assertEqual(struct.unpack_from("<H", image, 0)[0], 0x1000)
 
-    def test_detect_overlays_not_implemented(self):
-        data = build_mz_binary(code=b"\x90")
+    def test_apply_relocations_wraps_at_64k(self):
+        # 0xF000 + 0x2000 must wrap to 0x1000, not become 0x11000.
+        data = build_mz_binary(
+            num_relocs=1,
+            reloc_entries=[(0x0000, 0x0000)],
+            code=struct.pack("<H", 0xF000) + b"\x90" * 14,
+        )
         parser = MZParser(data)
         parser.parse()
-        with self.assertRaises(NotImplementedError):
-            parser.detect_overlays()
+        image = parser.apply_relocations(load_segment=0x2000)
+        self.assertEqual(struct.unpack_from("<H", image, 0)[0], 0x1000)
+
+    def test_apply_relocations_no_relocations_is_identity(self):
+        data = build_mz_binary(num_relocs=0, code=b"\x90" * 16)
+        parser = MZParser(data)
+        parser.parse()
+        self.assertEqual(bytes(parser.apply_relocations()), parser.get_code_image())
+
+    def test_detect_overlays_none(self):
+        data = build_mz_binary(code=b"\x90" * 16)
+        parser = MZParser(data)
+        parser.parse()
+        self.assertIsNone(parser.detect_overlays())
+
+    def test_detect_overlays_returns_offset(self):
+        data = build_mz_binary(code=b"\x90" * 16)
+        parser = MZParser(data + b"OVERLAYDATA")
+        parser.parse()
+        self.assertEqual(parser.detect_overlays(), parser.header.file_size)
 
 
 if __name__ == "__main__":

@@ -73,6 +73,16 @@ jobs:
           sys.exit(1 if bad else 0)
           EOF
 
+      # The reference solutions are generated from the stubs, so a stub that
+      # changes shape must be followed by regenerating. This catches drift.
+      - name: Check reference solutions are current
+        run: python tools/make_solutions.py --check
+
+      # The real gate: every reference solution must pass its own lab's tests.
+      # The stubs are meant to fail (they are TODOs); the solutions are not.
+      - name: Run lab tests against the reference solutions
+        run: python tools/check_solutions.py
+
       # One pytest process per lab: each lab directory owns its own module namespace,
       # and several labs share file names (simple_isa.py), so a single run would
       # collide on basenames.
