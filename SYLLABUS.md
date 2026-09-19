@@ -964,7 +964,7 @@ Semesters 1 and 2 teach how to recompile. Semester 3 is about the engineering th
 working proof of concept into something other people can build, trust, and use --
 automation, evidence, performance, and shipping.
 
-> **Build status:** Units 9 and 10 are written. Units 11 and 12 are outlined below and not
+> **Build status:** Semester 3 is complete (Modules 33-48). Semester 4 is outlined and not
 > yet built. Contributions welcome -- see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
@@ -1032,35 +1032,102 @@ commit by commit, including its public retraction. Making re-verification one co
 
 **Labs:** 62 (interpreter oracle), 63 (bisect harness), 64 (boundary tripwires)
 
-### Module 39: Fuzzing and Divergence Detection *(not yet written)*
+### Module 39: Fuzzing and Divergence Detection
+[Lecture](units/unit-10-quality-correctness/module-39-fuzzing-divergence/lecture.md)
 
-Differential fuzzing against an oracle, coverage-guided input generation for game state,
-automatic divergence minimisation, crash triage at scale.
+Why fuzzing fits this problem unusually well (you have a perfect oracle). What "input" means
+for a game. Differential fuzzing against an emulator. Minimising a divergence by nested
+bisection over inputs and code. Corpus runs as toolkit fuzzing. Triage. What fuzzing cannot find.
 
-### Module 40: Audio and Timing Accuracy *(not yet written)*
+**Labs:** 65 (instruction fuzzer), 66 (divergence minimiser), 67 (triage tool)
 
-Audio pipeline recompilation (APU, SPU, SCSP, AICA), sample-rate conversion, frame pacing and
-vsync, input latency measurement, and why audio usually comes up before graphics.
+### Module 40: Audio and Timing Accuracy
+[Lecture](units/unit-10-quality-correctness/module-40-audio-timing/lecture.md)
+
+The frame loop is not where you think it is. Who advances time. Interrupts as the clock, not
+as control flow. Audio as a real-time deadline, and why it usually comes up before graphics.
+Sample rate drift and clock discipline. Choosing an accuracy level. Testing timing.
+
+**Labs:** 68 (frame driver), 69 (audio clock discipline), 70 (timing regression test),
+71 (Unit 10 capstone: differential fuzzer with nested minimisation)
 
 ---
 
-## Unit 11 -- Performance Engineering (Modules 41-44) *(outlined, not built)*
+## Unit 11 -- Performance Engineering (Modules 41-44)
 
-| Module | Topic |
-|---|---|
-| 41 | Profiling recompiled binaries -- hot paths in generated C |
-| 42 | SIMD: translating guest vector units (VMX, VU, MMI, NEON) to host SIMD |
-| 43 | Memory access optimisation, cache behaviour, guest address space layout |
-| 44 | LTO, PGO, function ordering, dead function elimination at scale |
+### Module 41: Profiling Recompiled Binaries
+[Lecture](units/unit-11-performance/module-41-profiling/lecture.md)
 
-## Unit 12 -- Shipping and Distribution (Modules 45-48) *(outlined, not built)*
+The shape of generated code, and the number that governs everything: 88,816 functions lifted,
+444 reached. Choosing a baseline that tests the premise. Where the time actually goes (mostly
+not in the lifted code). Symbols. Build time as a performance problem.
 
-| Module | Topic |
-|---|---|
-| 45 | Legal considerations -- derived works, ship-the-tool-not-the-ROM, license compliance |
-| 46 | Packaging, asset extraction, user-provides-ROM workflows, updates |
-| 47 | User experience and modding support -- resolution, remapping, mod hooks, saves |
-| 48 | Semester 3 project: ship a recompiled game end to end |
+**Labs:** 72 (profile a recompiled binary), 73 (guest-level sampling profiler)
+
+### Module 42: SIMD for Lifted Code
+[Lecture](units/unit-11-performance/module-42-simd/lecture.md)
+
+Guest vector units and their host analogues. Register pressure and lane semantics. The easy
+elementwise case. Helpers for permutes and dot products. Where correctness goes wrong --
+reciprocal estimates, denormals, NaN, saturation, lane order. When the vector unit is a
+separate computer.
+
+**Labs:** 74 (vector lifter with differential reference), 75 (lane order and permutes)
+
+### Module 43: Memory Access Optimization
+[Lecture](units/unit-11-performance/module-43-memory-access/lecture.md)
+
+The ladder from a switch in a function to the guest's own addresses via the host MMU. Keeping
+memory-mapped I/O working when access is free. Endianness without branches. Cache behaviour,
+and why compiling less is the best cache optimisation. What not to do.
+
+**Labs:** 76 (memory access ladder, measured), 77 (endianness two ways)
+
+### Module 44: Whole-Program Optimization
+[Lecture](units/unit-11-performance/module-44-whole-program-opt/lecture.md)
+
+Compile less: finding the live set, and why trap stubs make aggressive pruning safe. LTO (on
+the runtime, not the generated code). PGO and representative profiles. Function ordering from
+an execution trace. What the C compiler already does for you.
+
+**Labs:** 78 (prune and trap), 79 (function ordering), 80 (Unit 11 capstone)
+
+---
+
+## Unit 12 -- Shipping and Distribution (Modules 45-48)
+
+### Module 45: Legal Considerations
+[Lecture](units/unit-12-shipping/module-45-legal/lecture.md)
+
+*Not legal advice.* Why the corpus gitignores the generated output and not just the ROM. What
+that costs in verifiability. Licence compatibility and what you linked. Why recompilation is
+not clean room. Things that change the picture. A practical checklist.
+
+**Labs:** 81 (dependency audit), 82 (ship-the-tool workflow)
+
+### Module 46: Packaging and Distribution
+[Lecture](units/unit-12-shipping/module-46-packaging/lecture.md)
+
+The user's path from their own copy to a running build. Verifying the input before using it.
+Extraction as the place users get stuck. Making failure legible. Documenting where the project
+actually is. Distribution within the Module 45 constraint. Multi-platform.
+
+**Labs:** 83 (input verification), 84 (fresh-machine run)
+
+### Module 47: User Experience and Modding Support
+[Lecture](units/unit-12-shipping/module-47-ux-modding/lecture.md)
+
+The baseline users expect. Which enhancements are genuinely cheap and which are not. **Modding
+as a link-order question** -- the override pattern that falls out of the dispatch table.
+Debug tooling as user tooling. What "finished" looks like from the outside.
+
+**Labs:** 85 (runtime feature set), 86 (write a mod)
+
+### Module 48: Semester 3 Project: Ship a Recompiled Game
+[Lecture](units/unit-12-shipping/module-48-semester3-project/lecture.md)
+
+End to end: pipeline, evidence, performance, packaging. A suggested order that front-loads the
+oracle. What to write down. How to audit your own work.
 
 ---
 

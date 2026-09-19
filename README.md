@@ -2,12 +2,12 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Course Status](https://img.shields.io/badge/Course-In_Development-orange.svg)](#)
-[![Modules](https://img.shields.io/badge/Modules-38_of_64-blue.svg)](#)
+[![Modules](https://img.shields.io/badge/Modules-48_of_64-blue.svg)](#)
 [![Labs](https://img.shields.io/badge/Labs-50-green.svg)](#)
 
 > An open course on static binary recompilation -- the art of translating compiled programs from one platform to another at the source level.
 >
-> Semesters 1 and 2 are complete (Modules 1-32). Semester 3 is in progress (Modules 33-38 written). Semester 4 is planned.
+> Semesters 1-3 are complete (Modules 1-48). Semester 4 is planned.
 
 ---
 
@@ -15,7 +15,7 @@
 
 Static recompilation is the process of disassembling a compiled binary, lifting its instructions into portable C source code, and recompiling that code to run natively on modern hardware -- no runtime emulator required. It is one of the most powerful techniques in software preservation, yet almost no structured learning material exists for it.
 
-This course changes that. Across **10 Units**, **38 Modules**, and **50 Hands-on Labs**, you will go from understanding basic binary formats to recompiling real console games for modern platforms.
+This course changes that. Across **12 Units**, **48 Modules**, and **50 Hands-on Labs**, you will go from understanding basic binary formats to recompiling real console games for modern platforms.
 
 Every module points at real, public, committed work -- specific files, specific commits, specific numbers -- rather than describing techniques in the abstract. Where a project's own README overstates what its code does, the course says so and shows you how to check. Module 37 is entirely about that skill.
 
@@ -128,7 +128,7 @@ Whether you are a preservationist, a reverse engineer, a systems programmer, or 
 | [Module 31](units/unit-8-extreme-targets/module-31-multithreaded-recomp/) | Multi-Threaded Recompilation | Dual-CPU, heterogeneous, synchronization, deterministic multi-threaded testing |
 | [Module 32](units/unit-8-extreme-targets/module-32-capstone-project/) | Capstone Project | Full end-to-end recompilation of a real binary you choose |
 
-### Semester 3 -- Production Engineering (in progress)
+### Semester 3 -- Production Engineering
 
 | Module | Topic | Key Concepts |
 |---|---|---|
@@ -138,9 +138,18 @@ Whether you are a preservationist, a reverse engineer, a systems programmer, or 
 | [Module 36](units/unit-9-automated-pipelines/module-36-config-driven-recomp/) | Configuration-Driven Recompilation | The manifest is the project, hint tables, multi-target builds, configurable escape hatches |
 | [Module 37](units/unit-10-quality-correctness/module-37-what-it-works-means/) | What "It Works" Means | The ladder of evidence, harness-produced evidence, silent fallbacks, the ten-minute audit |
 | [Module 38](units/unit-10-quality-correctness/module-38-differential-testing/) | Differential Testing and Oracles | Oracle before lifter, bisecting the lifted set, boundary tripwires, a full campaign read commit by commit |
+| [Module 39](units/unit-10-quality-correctness/module-39-fuzzing-divergence/) | Fuzzing and Divergence Detection | Differential fuzzing, nested bisection over inputs and code, corpus runs, triage |
+| [Module 40](units/unit-10-quality-correctness/module-40-audio-timing/) | Audio and Timing Accuracy | Who advances time, interrupts as the clock, audio deadlines, clock discipline, accuracy levels |
+| [Module 41](units/unit-11-performance/module-41-profiling/) | Profiling Recompiled Binaries | 444 of 88,816, choosing a baseline, where the time really goes, build time |
+| [Module 42](units/unit-11-performance/module-42-simd/) | SIMD for Lifted Code | Guest vector units to host SIMD, lane semantics, denormals and saturation, microcode |
+| [Module 43](units/unit-11-performance/module-43-memory-access/) | Memory Access Optimization | From a switch to the host MMU, MMIO when access is free, endianness, cache |
+| [Module 44](units/unit-11-performance/module-44-whole-program-opt/) | Whole-Program Optimization | Compile less, trap stubs, LTO, PGO, function ordering |
+| [Module 45](units/unit-12-shipping/module-45-legal/) | Legal Considerations | Ship the tool not the output, licence compatibility, what clean room is not |
+| [Module 46](units/unit-12-shipping/module-46-packaging/) | Packaging and Distribution | Input verification, extraction, legible failure, honest status |
+| [Module 47](units/unit-12-shipping/module-47-ux-modding/) | UX and Modding Support | Save states and input, cheap vs expensive enhancements, modding by link order |
+| [Module 48](units/unit-12-shipping/module-48-semester3-project/) | Semester 3 Project | Ship a recompiled game end to end, and audit your own claims |
 
-Modules 39-48 are outlined in [SYLLABUS.md](SYLLABUS.md) and not yet written.
-Semester 4 is planned in [papers/semesters-3-4-plan.md](papers/semesters-3-4-plan.md).
+Semester 4 (Modules 49-64) is planned in [papers/semesters-3-4-plan.md](papers/semesters-3-4-plan.md).
 
 ---
 
@@ -179,6 +188,8 @@ recompclass/
     unit-8-extreme-targets/     Modules 30-32
     unit-9-automated-pipelines/ Modules 33-36   (Semester 3)
     unit-10-quality-correctness/ Modules 37-40  (Semester 3)
+    unit-11-performance/        Modules 41-44   (Semester 3)
+    unit-12-shipping/           Modules 45-48   (Semester 3)
   labs/                50 hands-on lab exercises
 ```
 
