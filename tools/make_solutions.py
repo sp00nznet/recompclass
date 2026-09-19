@@ -1368,6 +1368,862 @@ impl("lab-50", "regression_runner.py", "run_all_tests", r"""
 """)
 
 
+# ------------------------------------------------------------------ lab-51
+impl("lab-51", "pipeline.py", "hash_file", r"""
+    with open(path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+""")
+impl("lab-51", "pipeline.py", "stage_key", r"""
+    parts = [stage.name, stage.version]
+    # Sorted, so the same inputs in a different order give the same key.
+    for path in sorted(inputs):
+        parts.append(f"{path}:{hash_file(path)}")
+    return hashlib.sha256("|".join(parts).encode()).hexdigest()
+""")
+impl("lab-51", "pipeline.py", "run", r"""
+    self.ran = []
+    self.skipped = []
+    self._provenance = {
+        "inputs": [(p, hash_file(p)) for p in inputs],
+        "stages": [],
+    }
+
+    current = list(inputs)
+    for stage in self.stages:
+        key = stage_key(stage, current)
+        cached = key in self.cache
+        if cached:
+            outputs = self.cache[key]
+            self.skipped.append(stage.name)
+        else:
+            outputs = stage.func(current, self.outdir)
+            self.cache[key] = outputs
+            self.ran.append(stage.name)
+
+        self._provenance["stages"].append({
+            "name": stage.name,
+            "version": stage.version,
+            "key": key,
+            "cached": cached,
+            "outputs": list(outputs),
+        })
+        current = outputs
+
+    return current
+""")
+impl("lab-51", "pipeline.py", "provenance", r"""
+    return self._provenance
+""")
+
+# ------------------------------------------------------------------ lab-52
+impl("lab-52", "batch.py", "run_target", r"""
+    value = target
+    for name, func in stages:
+        try:
+            value = func(value)
+        except StageFailure as exc:
+            return {"target": target, "category": exc.category,
+                    "stage": name, "message": exc.message}
+        except Timeout:
+            return {"target": target, "category": "timeout",
+                    "stage": name, "message": f"exceeded {timeout}s"}
+        except Exception as exc:
+            # An unexpected exception is itself information -- it means the
+            # harness met something no stage knew how to categorise.
+            return {"target": target, "category": "error",
+                    "stage": name, "message": str(exc)}
+
+    return {"target": target, "category": "ok", "stage": None, "message": ""}
+""")
+impl("lab-52", "batch.py", "run_batch", r"""
+    return [run_target(t, stages, timeout) for t in targets]
+""")
+impl("lab-52", "batch.py", "summarize", r"""
+    counts = {}
+    for result in results:
+        counts[result["category"]] = counts.get(result["category"], 0) + 1
+    counts["total"] = len(results)
+    return counts
+""")
+
+# ------------------------------------------------------------------ lab-54
+impl("lab-54", "fallthrough.py", "ends_with_terminator", r"""
+    instructions = func.get("instructions") or []
+    if not instructions:
+        return False
+    last = instructions[-1]["mnemonic"]
+    # A conditional branch is deliberately NOT a terminator: control can fall
+    # through it, so a function ending in one runs off its own end.
+    return last in RETURNS or last in UNCONDITIONAL_BRANCHES
+""")
+impl("lab-54", "fallthrough.py", "find_fallthroughs", r"""
+    return [f for f in functions if not ends_with_terminator(f)]
+""")
+impl("lab-54", "fallthrough.py", "propose_merges", r"""
+    by_addr = {f["addr"]: f for f in functions}
+    merges = []
+    for func in find_fallthroughs(functions):
+        successor = by_addr.get(end_address(func))
+        if successor is not None:
+            merges.append((func["addr"], successor["addr"]))
+    return sorted(merges)
+""")
+impl("lab-54", "fallthrough.py", "apply_merges", r"""
+    by_addr = {f["addr"]: f for f in functions}
+    successor_of = dict(merges)
+    absorbed = set(successor_of.values())
+
+    result = []
+    for func in sorted(functions, key=lambda f: f["addr"]):
+        if func["addr"] in absorbed:
+            continue
+
+        size = func["size"]
+        instructions = list(func["instructions"])
+        cursor = func["addr"]
+        # Follow the chain: A -> B -> C becomes one function.
+        while cursor in successor_of:
+            nxt = by_addr[successor_of[cursor]]
+            size += nxt["size"]
+            instructions.extend(nxt["instructions"])
+            cursor = nxt["addr"]
+
+        result.append({"addr": func["addr"], "size": size,
+                       "instructions": instructions})
+
+    return result
+""")
+
+
+# ------------------------------------------------------------------ lab-53
+impl("lab-53", "isagen.py", "parse_isa", r"""
+    lengths = {"none": 0, "imm8": 1, "imm16": 2}
+    entries = []
+    seen = set()
+
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+
+        fields = [f.strip() for f in line.split("|")]
+        if len(fields) != 6:
+            raise ValueError(f"expected 6 fields, got {len(fields)}: {line!r}")
+
+        opcode_s, mnemonic, operand, cls, cycles_s, semantics = fields
+        opcode = int(opcode_s, 16)
+
+        if cls not in CLASSES:
+            raise ValueError(f"unknown class {cls!r} for opcode {opcode_s}")
+        if operand not in lengths:
+            raise ValueError(f"unknown operand kind {operand!r} for opcode {opcode_s}")
+        if opcode in seen:
+            raise ValueError(f"duplicate opcode {opcode_s}")
+        seen.add(opcode)
+
+        entries.append(Entry(opcode, mnemonic, operand, cls, int(cycles_s), semantics))
+
+    return entries
+""")
+impl("lab-53", "isagen.py", "build_table", r"""
+    table = [None] * 256
+    for entry in entries:
+        table[entry.opcode] = entry
+    return table
+""")
+impl("lab-53", "isagen.py", "check_coverage", r"""
+    undefined = [i for i, e in enumerate(table) if e is None]
+    return {"defined": 256 - len(undefined), "undefined": undefined}
+""")
+impl("lab-53", "isagen.py", "emit_lifter", r"""
+    lines = ["void lift(uint8_t op, cpu_t *c) {", "    switch (op) {"]
+    for opcode in range(256):
+        entry = table[opcode]
+        if entry is None:
+            continue
+        lines.append(f"    case 0x{opcode:02X}: /* {entry.mnemonic} */")
+        lines.append(f"        c->cycles += {entry.cycles};")
+        lines.append(f"        {entry.semantics};")
+        lines.append("        break;")
+    lines.append("    default:")
+    lines.append("        unknown_opcode(op);")
+    lines.append("        break;")
+    lines.append("    }")
+    lines.append("}")
+    return "\n".join(lines)
+""")
+impl("lab-53", "isagen.py", "emit_interpreter", r"""
+    lines = ["def step(op, cpu):"]
+    keyword = "if"
+    for opcode in range(256):
+        entry = table[opcode]
+        if entry is None:
+            continue
+        lines.append(f"    {keyword} op == 0x{opcode:02X}:  # {entry.mnemonic}")
+        lines.append(f"        cpu.cycles += {entry.cycles}")
+        lines.append(f"        {entry.semantics}")
+        keyword = "elif"
+    if keyword == "if":
+        # No entries at all: the function still has to be valid Python.
+        lines.append("    raise ValueError(f'unknown opcode {op:#04x}')")
+    else:
+        lines.append("    else:")
+        lines.append("        raise ValueError(f'unknown opcode {op:#04x}')")
+    return "\n".join(lines)
+""")
+
+# ------------------------------------------------------------------ lab-55
+impl("lab-55", "fixtures.py", "assemble", r"""
+    out = bytearray()
+    for raw in lines:
+        line = raw.strip()
+        if not line or line.startswith(";"):
+            continue
+
+        parts = line.split()
+        mnemonic = parts[0]
+        if mnemonic not in OPCODES:
+            raise ValueError(f"unknown mnemonic {mnemonic!r}")
+
+        opcode, nbytes = OPCODES[mnemonic]
+        operands = parts[1:]
+        if nbytes == 0 and operands:
+            raise ValueError(f"{mnemonic} takes no operand")
+        if nbytes > 0 and not operands:
+            raise ValueError(f"{mnemonic} needs an operand")
+
+        out.append(opcode)
+        if nbytes:
+            value = int(operands[0], 0)
+            for shift in range(nbytes):
+                out.append((value >> (8 * shift)) & 0xFF)
+
+    return bytes(out)
+""")
+impl("lab-55", "fixtures.py", "run_fixture", r"""
+    actual = lifter(assemble(fixture.source))
+
+    if fixture.expected is None:
+        # Not a pass. An unrecorded golden is an untested fixture.
+        return {"name": fixture.name, "status": "no_golden",
+                "actual": actual, "diff": ""}
+
+    if actual == fixture.expected:
+        return {"name": fixture.name, "status": "pass",
+                "actual": actual, "diff": ""}
+
+    diff = "\n".join(difflib.unified_diff(
+        fixture.expected.splitlines(), actual.splitlines(),
+        fromfile="golden", tofile="actual", lineterm=""))
+    return {"name": fixture.name, "status": "fail", "actual": actual, "diff": diff}
+""")
+impl("lab-55", "fixtures.py", "run_suite", r"""
+    results = [run_fixture(f, lifter) for f in fixtures]
+    return {
+        "results": results,
+        "passed": sum(1 for r in results if r["status"] == "pass"),
+        "failed": sum(1 for r in results if r["status"] == "fail"),
+        "no_golden": sum(1 for r in results if r["status"] == "no_golden"),
+    }
+""")
+impl("lab-55", "fixtures.py", "regenerate", r"""
+    # Deliberately returns the new goldens rather than writing them back:
+    # a human reads the diff before any of this is committed.
+    return {f.name: lifter(assemble(f.source)) for f in fixtures}
+""")
+
+# ------------------------------------------------------------------ lab-57
+impl("lab-57", "manifest.py", "parse_manifest", r"""
+    sections = {}
+    current = None
+
+    for number, raw in enumerate(text.splitlines(), 1):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+
+        if line.startswith("[") and line.endswith("]"):
+            current = line[1:-1].strip()
+            sections.setdefault(current, {})
+            continue
+
+        if current is None:
+            raise ManifestError(f"line {number}: key outside any section: {line!r}")
+        if "=" not in line:
+            raise ManifestError(f"line {number}: malformed line: {line!r}")
+
+        key, _, value = line.partition("=")
+        sections[current][key.strip()] = value.strip()
+
+    return sections
+""")
+impl("lab-57", "manifest.py", "validate", r"""
+    for name in manifest:
+        top = name.split(".")[0]
+        if top in FORBIDDEN_SECTIONS:
+            raise ManifestError(
+                f"section [{name}] holds derived state; it belongs in the "
+                f"output directory, not the manifest")
+        if top not in KNOWN_SECTIONS:
+            raise ManifestError(f"unknown section [{name}]")
+
+    project = manifest.get("project")
+    if project is None:
+        raise ManifestError("missing [project] section")
+    if not project.get("name"):
+        raise ManifestError("[project] has no name")
+
+    return True
+""")
+impl("lab-57", "manifest.py", "hints", r"""
+    section = manifest.get("entrypoint.functions")
+    if not section:
+        return []
+
+    out = []
+    for key, note in section.items():
+        if not note.strip():
+            raise ManifestError(
+                f"hint {key} has no recorded source; a bare address cannot be "
+                f"told apart from a guess six months from now")
+        out.append({"addr": int(key, 16), "source": note.strip()})
+
+    return sorted(out, key=lambda h: h["addr"])
+""")
+impl("lab-57", "manifest.py", "resolve_overrides", r"""
+    section = manifest.get("imports")
+    if not section:
+        return {}
+
+    out = {}
+    for name, spec in section.items():
+        fields = {}
+        for item in spec.split(","):
+            item = item.strip()
+            if not item:
+                continue
+            if ":" not in item:
+                raise ManifestError(f"{name}: malformed override {item!r}")
+            field, _, value = item.partition(":")
+            field, value = field.strip(), value.strip()
+            if field == "purge":
+                try:
+                    value = int(value, 0)
+                except ValueError:
+                    raise ManifestError(f"{name}: purge must be an integer, got {value!r}")
+            fields[field] = value
+        out[name] = fields
+
+    return out
+""")
+impl("lab-57", "manifest.py", "derived_path", r"""
+    name = manifest["project"]["name"]
+    return os.path.join(outdir, f"{name}.derived.json")
+""")
+
+# ------------------------------------------------------------------ lab-58
+impl("lab-58", "variant.py", "load_variants", r"""
+    out = []
+    seen = set()
+    for spec in specs:
+        name = spec["name"]
+        if name in seen:
+            raise ValueError(f"duplicate variant name {name!r}")
+        seen.add(name)
+        out.append(Variant(name, spec["functions"], spec.get("hints")))
+    return out
+""")
+impl("lab-58", "variant.py", "common_functions", r"""
+    return sorted(set(a.functions) & set(b.functions))
+""")
+impl("lab-58", "variant.py", "compute_deltas", r"""
+    return {
+        name: b.functions[name] - a.functions[name]
+        for name in common_functions(a, b)
+    }
+""")
+impl("lab-58", "variant.py", "dominant_shift", r"""
+    total = len(deltas)
+    if total == 0:
+        return {"shift": None, "count": 0, "total": 0, "coverage": 0.0}
+
+    counts = Counter(deltas.values())
+    # Most common wins; ties go to the smaller magnitude, so the report is
+    # stable between runs and prefers the likelier explanation.
+    shift, count = max(counts.items(), key=lambda kv: (kv[1], -abs(kv[0])))
+    return {"shift": shift, "count": count, "total": total,
+            "coverage": count / total}
+""")
+impl("lab-58", "variant.py", "port_hints", r"""
+    sign = "+" if shift >= 0 else "-"
+    label = f"{sign}0x{abs(shift):X}"
+    return [
+        {"addr": h["addr"] + shift,
+         "source": f"ported {label} from {h['source']}"}
+        for h in hints
+    ]
+""")
+
+
+# ------------------------------------------------------------------ lab-61
+impl("lab-61", "attribution.py", "record_draw", r"""
+    if source not in SOURCES:
+        raise ValueError(f"unknown draw source {source!r}")
+    self.frame["draws"][source] += count
+    self.session["draws"][source] += count
+""")
+impl("lab-61", "attribution.py", "record_dispatch", r"""
+    key = "native" if native else "fallback"
+    self.frame["dispatch"][key] += 1
+    self.session["dispatch"][key] += 1
+""")
+impl("lab-61", "attribution.py", "end_frame", r"""
+    snapshot = {
+        "draws": dict(self.frame["draws"]),
+        "dispatch": dict(self.frame["dispatch"]),
+    }
+    self.session["frames"] += 1
+    self.frame = {"draws": {GUEST: 0, HARNESS: 0},
+                  "dispatch": {"native": 0, "fallback": 0}}
+    return snapshot
+""")
+impl("lab-61", "attribution.py", "session_summary", r"""
+    draws = dict(self.session["draws"])
+    dispatch = dict(self.session["dispatch"])
+    total_draws = draws[GUEST] + draws[HARNESS]
+    total_dispatch = dispatch["native"] + dispatch["fallback"]
+    return {
+        "frames": self.session["frames"],
+        "draws": draws,
+        "dispatch": dispatch,
+        "guest_draw_ratio": (draws[GUEST] / total_draws) if total_draws else 0.0,
+        "native_ratio": (dispatch["native"] / total_dispatch) if total_dispatch else 0.0,
+    }
+""")
+impl("lab-61", "attribution.py", "honest_claim", r"""
+    guest = summary["draws"][GUEST]
+    harness = summary["draws"][HARNESS]
+    total = guest + harness
+
+    if total == 0:
+        claim = "Nothing has been drawn."
+    elif guest == 0:
+        claim = (f"All {total} draws came from the harness; "
+                 f"the guest has not drawn anything.")
+    elif harness == 0:
+        claim = f"All {total} draws came from guest code."
+    else:
+        pct = round(100 * guest / total)
+        claim = (f"{guest} of {total} draws came from guest code "
+                 f"({pct}%); the rest are harness.")
+
+    native = summary["dispatch"]["native"]
+    fallback = summary["dispatch"]["fallback"]
+    dispatched = native + fallback
+    if dispatched:
+        if fallback == 0:
+            claim += f" All {dispatched} dispatches ran native code."
+        else:
+            claim += f" {fallback} of {dispatched} dispatches fell back."
+
+    return claim
+""")
+
+# ------------------------------------------------------------------ lab-62
+impl("lab-62", "oracle.py", "diff_states", r"""
+    return [f for f in FIELDS if getattr(a, f) != getattr(b, f)]
+""")
+impl("lab-62", "oracle.py", "run_differential", r"""
+    # Separate states: if both implementations advanced one object, a
+    # divergence could never be observed.
+    state_a = State()
+    state_b = State()
+    steps = 0
+
+    for step in range(limit):
+        try:
+            next_a = impl_a(program, step, state_a)
+            next_b = impl_b(program, step, state_b)
+        except StopIteration:
+            break
+
+        steps += 1
+        fields = diff_states(next_a, next_b)
+        if fields:
+            return {"diverged": True, "step": step,
+                    "expected": next_a, "actual": next_b,
+                    "fields": fields, "steps_run": steps}
+
+        state_a, state_b = next_a, next_b
+
+    return {"diverged": False, "step": None, "expected": None,
+            "actual": None, "fields": [], "steps_run": steps}
+""")
+
+# ------------------------------------------------------------------ lab-63
+impl("lab-63", "bisect_lift.py", "in_range", r"""
+    return lo <= addr <= hi
+""")
+impl("lab-63", "bisect_lift.py", "run_with_range", r"""
+    return [lifted_fn(a) if in_range(a, lo, hi) else oracle_fn(a) for a in addrs]
+""")
+impl("lab-63", "bisect_lift.py", "bisect", r"""
+    found, _log = bisect_log(addrs, test)
+    return found
+""")
+impl("lab-63", "bisect_lift.py", "bisect_log", r"""
+    log = []
+
+    def probe(lo, hi):
+        good = test(lo, hi)
+        log.append({"lo": lo, "hi": hi, "good": good})
+        return good
+
+    if not addrs or probe(addrs[0], addrs[-1]):
+        return None, log
+
+    # Smallest prefix [addrs[0], addrs[i]] that is bad.
+    lo_i, hi_i = 0, len(addrs) - 1
+    while lo_i < hi_i:
+        mid = (lo_i + hi_i) // 2
+        if probe(addrs[0], addrs[mid]):
+            lo_i = mid + 1
+        else:
+            hi_i = mid
+
+    return addrs[lo_i], log
+""")
+
+# ------------------------------------------------------------------ lab-64
+impl("lab-64", "tripwire.py", "check_stack", r"""
+    if before == after:
+        return None
+    delta = after - before
+    return f"sp moved by {delta} (0x{before:X} -> 0x{after:X})"
+""")
+impl("lab-64", "tripwire.py", "check_callee_saved", r"""
+    clobbered = []
+    for reg in saved_regs:
+        if reg not in before or reg not in after:
+            continue          # not observed; do not invent a failure
+        if before[reg] != after[reg]:
+            clobbered.append(f"{reg} 0x{before[reg]:X} -> 0x{after[reg]:X}")
+    return ", ".join(clobbered) if clobbered else None
+""")
+impl("lab-64", "tripwire.py", "check_guards", r"""
+    violations = []
+    for addr in sorted(guards):
+        expected = guards[addr]
+        if addr not in memory:
+            violations.append(f"{addr}: unmapped, expected 0x{expected:02X}")
+        elif memory[addr] != expected:
+            violations.append(
+                f"{addr}: expected 0x{expected:02X}, got 0x{memory[addr]:02X}")
+    return ", ".join(violations) if violations else None
+""")
+impl("lab-64", "tripwire.py", "guarded_call", r"""
+    before = copy.deepcopy(ctx)
+    result = fn(ctx)
+
+    for name, check in checks:
+        detail = check(before, ctx)
+        if detail:
+            raise TripwireFailure(name, detail, call_name)
+
+    return result
+""")
+
+# ------------------------------------------------------------------ lab-65
+impl("lab-65", "insnfuzz.py", "interesting_values", r"""
+    mask = MASKS[width]
+    signed = 1 << (width - 1)
+    values = {
+        0x00, 0x01,
+        0x0F, 0x10,
+        signed - 1, signed, signed + 1,
+        mask - 1, mask,
+    }
+    return sorted(v for v in values if 0 <= v <= mask)
+""")
+impl("lab-65", "insnfuzz.py", "gen_operand", r"""
+    if rng.random() < edge_bias:
+        return rng.choice(interesting_values(width))
+    return rng.randint(0, MASKS[width])
+""")
+impl("lab-65", "insnfuzz.py", "fuzz_instruction", r"""
+    rng = random.Random(seed)
+    ran = 0
+
+    for _ in range(trials):
+        operands = tuple(gen_operand(rng, width, edge_bias) for _ in range(arity))
+        ran += 1
+        expected = impl_a(*operands)
+        actual = impl_b(*operands)
+        if expected != actual:
+            return {"name": name, "trials": ran, "failed": True,
+                    "operands": operands, "expected": expected,
+                    "actual": actual, "seed": seed}
+
+    return {"name": name, "trials": ran, "failed": False, "operands": None,
+            "expected": None, "actual": None, "seed": seed}
+""")
+impl("lab-65", "insnfuzz.py", "shrink_case", r"""
+    current = tuple(operands)
+    if not still_fails(current):
+        return current
+
+    candidates = interesting_values(width)
+    changed = True
+    while changed:
+        changed = False
+        for i in range(len(current)):
+            # Only ever move to a SMALLER value. Accepting any different value
+            # lets the search oscillate between equally-failing cases and never
+            # terminate.
+            for candidate in candidates:
+                if candidate >= current[i]:
+                    break
+                trial = current[:i] + (candidate,) + current[i + 1:]
+                if still_fails(trial):
+                    current = trial
+                    changed = True
+                    break
+
+    return current
+""")
+
+
+# ------------------------------------------------------------------ lab-66
+impl("lab-66", "minimise.py", "truncate", r"""
+    if index < 0:
+        return []
+    return list(inputs[:index + 1])
+""")
+impl("lab-66", "minimise.py", "shrink_prefix", r"""
+    current = list(inputs)
+    lo, hi = 0, len(current)      # number of leading elements to drop
+    best = 0
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if mid < len(current) and still_fails(current[mid:]):
+            best = mid
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return current[best:]
+""")
+impl("lab-66", "minimise.py", "shrink_elements", r"""
+    current = list(inputs)
+    for i in range(len(current) - 1, -1, -1):
+        trial = current[:i] + current[i + 1:]
+        if still_fails(trial):
+            current = trial
+    return current
+""")
+impl("lab-66", "minimise.py", "minimise", r"""
+    original = list(inputs)
+    if not still_fails(original):
+        raise ValueError("input does not reproduce the failure")
+
+    log = []
+    current = original
+
+    if failure_index is not None:
+        current = truncate(current, failure_index)
+        if not still_fails(current):
+            raise ValueError("truncation lost the failure")
+        log.append(("truncate", len(current)))
+
+    current = shrink_prefix(current, still_fails)
+    if not still_fails(current):
+        raise ValueError("prefix shrink lost the failure")
+    log.append(("shrink_prefix", len(current)))
+
+    current = shrink_elements(current, still_fails)
+    if not still_fails(current):
+        raise ValueError("element shrink lost the failure")
+    log.append(("shrink_elements", len(current)))
+
+    return {
+        "minimal": current,
+        "original": len(original),
+        "final": len(current),
+        "ratio": (len(current) / len(original)) if original else 0.0,
+        "log": log,
+    }
+""")
+
+# ------------------------------------------------------------------ lab-67
+impl("lab-67", "triage.py", "fingerprint", r"""
+    kind = report["kind"]
+    if kind not in KINDS:
+        raise ValueError(f"unknown failure kind {kind!r}")
+    return (report["func"], report["insn"], kind)
+""")
+impl("lab-67", "triage.py", "deduplicate", r"""
+    groups = {}
+    for report in reports:
+        key = fingerprint(report)
+        group = groups.get(key)
+        if group is None:
+            groups[key] = {
+                "fingerprint": key,
+                "func": report["func"],
+                "insn": report["insn"],
+                "kind": report["kind"],
+                "count": 1,
+                "examples": [report],
+            }
+        else:
+            group["count"] += 1
+            group["examples"].append(report)
+    return list(groups.values())
+""")
+impl("lab-67", "triage.py", "rank", r"""
+    annotated = []
+    for group in groups:
+        g = dict(group)
+        g["reach"] = trace_counts.get(g["func"], 0)
+        annotated.append(g)
+
+    # A quiet divergence outranks a loud crash at equal reach: nothing tells
+    # you about a wrong answer.
+    return sorted(annotated, key=lambda g: (
+        -g["reach"],
+        -g["count"],
+        0 if g["kind"] == "divergence" else 1,
+        g["func"],
+    ))
+""")
+impl("lab-67", "triage.py", "triage", r"""
+    groups = deduplicate(reports)
+    return {
+        "total": len(reports),
+        "unique": len(groups),
+        "groups": rank(groups, trace_counts),
+    }
+""")
+
+# ------------------------------------------------------------------ lab-68
+impl("lab-68", "framedrv.py", "tick", r"""
+    self.cycles += cycles
+    self._budget += cycles
+
+    fired = 0
+    while self._budget >= self.cycles_per_frame:
+        self._budget -= self.cycles_per_frame
+        self.frames += 1
+        fired += 1
+        if self.on_frame:
+            self.on_frame()
+
+    return fired
+""")
+impl("lab-68", "framedrv.py", "run_loop", r"""
+    frames = 0
+    for i in range(iterations):
+        if body is not None:
+            body(i)
+        frames += clock.tick(cycles_per_iteration)
+    return {"iterations": iterations, "frames": frames}
+""")
+impl("lab-68", "framedrv.py", "detect_impossible_speed", r"""
+    if expected_cycles <= 0:
+        return None
+    ratio = actual_cycles / expected_cycles
+    if ratio < tolerance:
+        return (f"expected ~{expected_cycles} cycles, consumed {actual_cycles} "
+                f"({ratio:.3f}x) -- nothing appears to be advancing time")
+    return None
+""")
+
+# ------------------------------------------------------------------ lab-69
+impl("lab-69", "audioclock.py", "write", r"""
+    space = self.capacity - self.level
+    stored = min(count, space)
+    if stored < count:
+        self.overruns += 1
+    self.level += stored
+    return stored
+""")
+impl("lab-69", "audioclock.py", "read", r"""
+    got = min(count, self.level)
+    if got < count:
+        self.underruns += 1
+    self.level -= got
+    return got
+""")
+impl("lab-69", "audioclock.py", "correction", r"""
+    error = fill - self.target_fill
+    adjust = self.gain * error
+    if adjust > self.max_correction:
+        adjust = self.max_correction
+    elif adjust < -self.max_correction:
+        adjust = -self.max_correction
+    return 1.0 + adjust
+""")
+impl("lab-69", "audioclock.py", "simulate", r"""
+    buf = Buffer(capacity)
+    buf.write(capacity // 2)      # start half full: slack in both directions
+
+    fills = []
+    for _ in range(frames):
+        buf.write(int(round(produced_per_frame * (1.0 + drift))))
+
+        rate = nominal_consumed
+        if discipline is not None:
+            rate = nominal_consumed * discipline.correction(buf.fill)
+        buf.read(int(round(rate)))
+
+        fills.append(buf.fill)
+
+    return {
+        "underruns": buf.underruns,
+        "overruns": buf.overruns,
+        "fills": fills,
+        "final_fill": fills[-1] if fills else 0.0,
+    }
+""")
+
+# ------------------------------------------------------------------ lab-70
+impl("lab-70", "timingtest.py", "compare_content", r"""
+    a_states, b_states = a.states(), b.states()
+    missing = sorted(a_states - b_states)
+    extra = sorted(b_states - a_states)
+    return {"match": not missing and not extra,
+            "missing": missing, "extra": extra}
+""")
+impl("lab-70", "timingtest.py", "compare_timeline", r"""
+    missing = []
+    mistimed = []
+
+    for frame, state in a.observations:
+        actual = b.frame_of(state)
+        if actual is None:
+            if state not in missing:
+                missing.append(state)
+            continue
+        delta = actual - frame
+        if abs(delta) > tolerance:
+            mistimed.append({"state": state, "expected": frame,
+                             "actual": actual, "delta": delta})
+
+    mistimed.sort(key=lambda m: m["expected"])
+    return {"match": not missing and not mistimed,
+            "missing": sorted(missing), "mistimed": mistimed}
+""")
+impl("lab-70", "timingtest.py", "assert_reaches", r"""
+    actual = timeline.frame_of(state)
+    if actual is None:
+        return f"{state!r} was never reached"
+    delta = actual - frame
+    if abs(delta) > tolerance:
+        return (f"{state!r} expected at frame {frame}, reached at {actual} "
+                f"(delta {delta:+d})")
+    return None
+""")
+
+
 # ==========================================================================
 # Machinery
 # ==========================================================================
@@ -1404,7 +2260,13 @@ def build(stub_path: pathlib.Path, impls: list[tuple[str, str]]) -> str:
     for func, body in impls:
         start, end, indent = find_function(text, func)
         segment = text[start:end]
-        m = TODO_BLOCK.search(segment)
+        # A docstring may legitimately contain an example ending in `pass`, so
+        # only accept a block that actually marks unimplemented work.
+        m = None
+        for candidate in TODO_BLOCK.finditer(segment):
+            if "TODO" in candidate.group(0) or "NotImplementedError" in candidate.group(0):
+                m = candidate
+                break
         if not m:
             raise SystemExit(
                 f"{stub_path.relative_to(REPO)}: no TODO block found in {func!r}.\n"

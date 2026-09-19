@@ -23,6 +23,21 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 LABS = REPO / "labs"
 
 
+def recover() -> None:
+    """Restore any stubs left swapped out by an interrupted run.
+
+    The swap is undone in a `finally`, but a hard kill (a timeout, Ctrl-Break)
+    skips that -- leaving the solution sitting where the stub belongs, which
+    then looks like a stub that "changed shape". Cleaning up on entry makes the
+    harness safe to interrupt.
+    """
+    for backup in LABS.glob("lab-*/*.stub-backup"):
+        target = backup.with_suffix("")
+        shutil.copy2(backup, target)
+        backup.unlink()
+        print(f"recovered {target.relative_to(REPO)} from an interrupted run")
+
+
 def run_lab(lab_dir: pathlib.Path) -> tuple[str, str]:
     """Swap in the solution, run pytest, restore. Returns (status, detail)."""
     solution_dir = lab_dir / "solution"
@@ -58,6 +73,7 @@ def run_lab(lab_dir: pathlib.Path) -> tuple[str, str]:
 
 
 def main() -> int:
+    recover()
     wanted = sys.argv[1:]
     labs = sorted(d for d in LABS.glob("lab-*") if d.is_dir())
     if wanted:
