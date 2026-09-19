@@ -964,8 +964,8 @@ Semesters 1 and 2 teach how to recompile. Semester 3 is about the engineering th
 working proof of concept into something other people can build, trust, and use --
 automation, evidence, performance, and shipping.
 
-> **Build status:** Semester 3 is complete (Modules 33-48). Semester 4 is outlined and not
-> yet built. Contributions welcome -- see [CONTRIBUTING.md](CONTRIBUTING.md).
+> **Build status:** All four semesters are written (Modules 1-64). Corrections and
+> additions welcome -- see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
@@ -1131,14 +1131,169 @@ oracle. What to write down. How to audit your own work.
 
 ---
 
-## Semester 4 -- Frontiers and Research (Modules 49-64) *(planned)*
+## Semester 4 -- Frontiers and Research (Modules 49-64)
 
-See [papers/semesters-3-4-plan.md](papers/semesters-3-4-plan.md) for the full outline.
+Semester 4 leaves the well-trodden platforms. Hybrid designs, architectures nobody has
+recompiled, contributing to the toolkits you have been using, and producing a result somebody
+else can rely on.
 
-- **Unit 13 (49-52)** Hybrid techniques -- static + dynamic, binary rewriting, decomp-assisted recompilation
-- **Unit 14 (53-56)** Emerging architectures -- leading with the unusual ones: 4-bit CPUs, bytecode targets, and machines with no fixed-function hardware at all
-- **Unit 15 (57-60)** Tooling contributions -- contributing upstream, the stress-target project shape
-- **Unit 16 (61-64)** Original research and capstone
+---
+
+## Unit 13 -- Hybrid Techniques (Modules 49-52)
+
+### Module 49: Static and Dynamic, Together
+[Lecture](units/unit-13-hybrid/module-49-static-dynamic/lecture.md)
+
+The spectrum from pure interpreter to pure static, and where the real projects sit. Interception
+(start with everything working) versus static-with-a-fallback (start with nothing working).
+Runtime information feeding static analysis. JIT as a fallback, and why nobody took it. Migration
+as a design rather than an accident.
+
+**Labs:** 99 (instrument a hybrid), 100 (migration ladder)
+
+### Module 50: Binary Rewriting and Patching
+[Lecture](units/unit-13-hybrid/module-50-binary-rewriting/lecture.md)
+
+The adjacent research family -- RetroWrite, rev.ng, BinRec, LeanBin -- and what transfers.
+LLVM IR versus C as an output target. Patching as a technique, and why recompiling makes
+patching easier. When rewriting beats recompiling.
+
+**Labs:** 101 (patch versus recompile), 102 (read the adjacent literature)
+
+### Module 51: Decompilation-Assisted Recompilation
+[Lecture](units/unit-13-hybrid/module-51-decomp-assisted/lecture.md)
+
+What a symbol file buys (Yasiki at 100% versus racer's 143 hand-fixed splits). Import it, do not
+copy it. Why partial decompilations are still worth a lot. Matching decomps as ground truth.
+Feeding back.
+
+**Labs:** 103 (symbol importer), 104 (matching decomp as oracle), 105 (feed back)
+
+### Module 52: Machine Learning for Binary Analysis
+[Lecture](units/unit-13-hybrid/module-52-ml-binary-analysis/lecture.md)
+
+Held to the same evidence standard as everything else. Tasks with a checker versus tasks
+without. What is actually running in this corpus. How to evaluate a claim in this space --
+including this course's own.
+
+**Labs:** 106 (propose and check), 107 (equivalence gate), 108 (Unit 13 capstone)
+
+---
+
+## Unit 14 -- Emerging Architectures (Modules 53-56)
+
+### Module 53: Very Small Targets -- 4-Bit CPUs and Whole-ROM Recompilation
+[Lecture](units/unit-14-emerging-arch/module-53-four-bit/lecture.md)
+
+The Tamagotchi's E0C6S46. One C function with 6,144 labels. A paging instruction that compiles
+to nothing. An independent oracle that found a silent bug 1,486 instructions in -- and two
+harness bugs that impersonated it. What this teaches about big targets.
+
+**Labs:** 87 (whole-ROM emitter), 88 (fold a paging instruction), 89 (independent oracle)
+
+### Module 54: Bytecode Targets -- When the "Machine Code" Is a VM
+[Lecture](units/unit-14-emerging-arch/module-54-bytecode-targets/lecture.md)
+
+Noticing you have a choice (one import, 14 relocations across 114 KB). Recompile the interpreter,
+the bytecode, or neither. A stack VM without a stack. Encoding traps that fail silently, and
+corpus verification as the defence.
+
+**Labs:** 90 (is it bytecode?), 91 (stack-to-locals), 92 (encoding traps)
+
+### Module 55: Undocumented and Unsupported Hardware
+[Lecture](units/unit-14-emerging-arch/module-55-undocumented-hardware/lecture.md)
+
+Measuring instead of assuming. Assembling the whole address space first (2,533 unresolved
+transfers to 227). Classifying what is left -- "three different problems, not 227." Harvard
+memory models. Where information comes from when there is no wiki.
+
+**Labs:** 93 (assemble the address space), 94 (classify the unknowns), 95 (Harvard memory model)
+
+### Module 56: Picking Your Own Frontier
+[Lecture](units/unit-14-emerging-arch/module-56-your-own-frontier/lecture.md)
+
+The feasibility questions, cheapest first. What makes a target genuinely easy or hard. Deciding
+what "done" means before starting. The toolkit / first game / second game shape. Reusing a CPU
+front end you already own. Frontiers that are still open.
+
+**Labs:** 96 (feasibility report), 97 (front-end reuse audit), 98 (Unit 14 capstone)
+
+---
+
+## Unit 15 -- Tooling Contributions (Modules 57-60)
+
+### Module 57: Contributing Upstream
+[Lecture](units/unit-15-tooling/module-57-contributing-upstream/lecture.md)
+
+The project with no code and ten upstream fixes. Why bring-up finds toolkit bugs. Making a
+contribution that gets merged. Where the open work actually is. When to fork.
+
+**Labs:** 109 (upstream a fix), 110 (fill a named gap)
+
+### Module 58: Designing a Toolkit Others Can Use
+[Lecture](units/unit-15-tooling/module-58-toolkit-design/lecture.md)
+
+Where the toolkit/port line goes, and why a thin port is evidence. The second game as the test.
+Organising by subsystem. Automatic registration. Shipping the escape hatches. Documentation that
+earns its place.
+
+**Labs:** 111 (extract a toolkit), 112 (auto-registration)
+
+### Module 59: Project Shapes
+[Lecture](units/unit-15-tooling/module-59-project-shapes/lecture.md)
+
+Nine shapes the corpus actually contains -- toolkit, first game, second game, flagship port,
+stress target, research log, preservation case, novel capability, harness -- each with its own
+"done" condition and metric. Most do not require a playable game.
+
+**Labs:** 113 (classify the corpus), 114 (declare a shape)
+
+### Module 60: Documentation and Community
+[Lecture](units/unit-15-tooling/module-60-docs-community/lecture.md)
+
+Write down what you ruled out. Commit messages as the documentation. Separating the machine
+document from the project document, and fact from inference. Numbers with their method. Credit
+by name.
+
+**Labs:** 115 (machine document), 116 (negative results), 117 (Unit 15 capstone)
+
+---
+
+## Unit 16 -- Original Research and Capstone (Modules 61-64)
+
+### Module 61: Open Problems
+[Lecture](units/unit-16-research/module-61-open-problems/lecture.md)
+
+Ten genuinely unsolved things, each with what is done instead and what a real contribution would
+look like: function boundaries, self-modifying code, verified equivalence, selective cycle
+accuracy, generated shims, retargetable frameworks, a recompilability metric, microcode
+identification, Palm OS, and one very concrete missing Vulkan backend.
+
+**Labs:** 118 (measure an open problem), 119 (verified lifting rules)
+
+### Module 62: Research Methods
+[Lecture](units/unit-16-research/module-62-research-methods/lecture.md)
+
+Ask something that can be answered no. Oracle first. Corpus, not examples. Vary one thing.
+Expect your harness to be the bug. Negative and partial results. Revise downward when you should.
+
+**Labs:** 120 (design a study), 121 (harness validation)
+
+### Module 63: Writing It Up
+[Lecture](units/unit-16-research/module-63-writing-it-up/lecture.md)
+
+Picking the form -- most work belongs in a `docs/` file, not a paper. What a technique writeup
+contains, including what failed. Writing the retraction. Where to put it.
+
+**Labs:** 122 (technique writeup), 123 (machine document)
+
+### Module 64: Capstone
+[Lecture](units/unit-16-research/module-64-capstone/lecture.md)
+
+Four shapes to choose from, what every shape must produce, auditing your own work, and what the
+course was actually about.
+
+---
 
 ---
 

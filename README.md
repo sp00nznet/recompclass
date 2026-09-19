@@ -1,13 +1,13 @@
 # Static Recompilation: From Theory to Practice
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Course Status](https://img.shields.io/badge/Course-In_Development-orange.svg)](#)
-[![Modules](https://img.shields.io/badge/Modules-48_of_64-blue.svg)](#)
+[![Course Status](https://img.shields.io/badge/Course-Complete-brightgreen.svg)](#)
+[![Modules](https://img.shields.io/badge/Modules-64-blue.svg)](#)
 [![Labs](https://img.shields.io/badge/Labs-50-green.svg)](#)
 
 > An open course on static binary recompilation -- the art of translating compiled programs from one platform to another at the source level.
 >
-> Semesters 1-3 are complete (Modules 1-48). Semester 4 is planned.
+> Four semesters, 64 modules, 50 labs with reference solutions.
 
 ---
 
@@ -15,7 +15,7 @@
 
 Static recompilation is the process of disassembling a compiled binary, lifting its instructions into portable C source code, and recompiling that code to run natively on modern hardware -- no runtime emulator required. It is one of the most powerful techniques in software preservation, yet almost no structured learning material exists for it.
 
-This course changes that. Across **12 Units**, **48 Modules**, and **50 Hands-on Labs**, you will go from understanding basic binary formats to recompiling real console games for modern platforms.
+This course changes that. Across **16 Units**, **64 Modules**, and **50 Hands-on Labs**, you will go from understanding basic binary formats to recompiling real console games for modern platforms.
 
 Every module points at real, public, committed work -- specific files, specific commits, specific numbers -- rather than describing techniques in the abstract. Where a project's own README overstates what its code does, the course says so and shows you how to check. Module 37 is entirely about that skill.
 
@@ -149,7 +149,26 @@ Whether you are a preservationist, a reverse engineer, a systems programmer, or 
 | [Module 47](units/unit-12-shipping/module-47-ux-modding/) | UX and Modding Support | Save states and input, cheap vs expensive enhancements, modding by link order |
 | [Module 48](units/unit-12-shipping/module-48-semester3-project/) | Semester 3 Project | Ship a recompiled game end to end, and audit your own claims |
 
-Semester 4 (Modules 49-64) is planned in [papers/semesters-3-4-plan.md](papers/semesters-3-4-plan.md).
+### Semester 4 -- Frontiers and Research
+
+| Module | Topic | Key Concepts |
+|---|---|---|
+| [Module 49](units/unit-13-hybrid/module-49-static-dynamic/) | Static and Dynamic, Together | The spectrum, interception vs fallback, traces feeding static analysis, migration as design |
+| [Module 50](units/unit-13-hybrid/module-50-binary-rewriting/) | Binary Rewriting and Patching | RetroWrite, rev.ng, BinRec, LeanBin; LLVM IR vs C; when rewriting beats recompiling |
+| [Module 51](units/unit-13-hybrid/module-51-decomp-assisted/) | Decompilation-Assisted Recompilation | What a symbol file buys, matching decomps as ground truth, feeding back |
+| [Module 52](units/unit-13-hybrid/module-52-ml-binary-analysis/) | ML for Binary Analysis | Tasks with a checker vs without; evaluating claims, including this course's own |
+| [Module 53](units/unit-14-emerging-arch/module-53-four-bit/) | Very Small Targets | A 4-bit CPU, one C function with 6,144 labels, a paging instruction that compiles to nothing |
+| [Module 54](units/unit-14-emerging-arch/module-54-bytecode-targets/) | Bytecode Targets | When the "machine code" is a VM; a stack VM without a stack; silent encoding traps |
+| [Module 55](units/unit-14-emerging-arch/module-55-undocumented-hardware/) | Undocumented Hardware | Measure, do not assume; assemble the whole address space; classify what is left |
+| [Module 56](units/unit-14-emerging-arch/module-56-your-own-frontier/) | Picking Your Own Frontier | Feasibility triage, what makes a target easy or hard, frontiers still open |
+| [Module 57](units/unit-15-tooling/module-57-contributing-upstream/) | Contributing Upstream | The project with no code and ten upstream fixes; where the open work is |
+| [Module 58](units/unit-15-tooling/module-58-toolkit-design/) | Designing a Toolkit | The toolkit/port line, the second game as the test, automatic registration |
+| [Module 59](units/unit-15-tooling/module-59-project-shapes/) | Project Shapes | Nine shapes, each with its own "done" condition -- most need no playable game |
+| [Module 60](units/unit-15-tooling/module-60-docs-community/) | Documentation and Community | Write down what you ruled out; commit messages as documentation; credit by name |
+| [Module 61](units/unit-16-research/module-61-open-problems/) | Open Problems | Ten unsolved things, each with what a real contribution would look like |
+| [Module 62](units/unit-16-research/module-62-research-methods/) | Research Methods | Oracle first, corpus not examples, expect your harness to be the bug |
+| [Module 63](units/unit-16-research/module-63-writing-it-up/) | Writing It Up | Picking the form, what a technique writeup contains, writing the retraction |
+| [Module 64](units/unit-16-research/module-64-capstone/) | Capstone | Four shapes, auditing your own work, and what the course was about |
 
 ---
 
@@ -190,6 +209,10 @@ recompclass/
     unit-10-quality-correctness/ Modules 37-40  (Semester 3)
     unit-11-performance/        Modules 41-44   (Semester 3)
     unit-12-shipping/           Modules 45-48   (Semester 3)
+    unit-13-hybrid/             Modules 49-52   (Semester 4)
+    unit-14-emerging-arch/      Modules 53-56   (Semester 4)
+    unit-15-tooling/            Modules 57-60   (Semester 4)
+    unit-16-research/           Modules 61-64   (Semester 4)
   labs/                50 hands-on lab exercises
 ```
 
