@@ -1,6 +1,6 @@
 # Semesters 3 and 4: Planning Document
 
-**Status**: Planning only — not yet integrated into the course repo.
+**Status**: Superseded. This was the plan; Semesters 3 and 4 are now built as Modules 33-64 in `units/unit-9-*` through `units/unit-16-*`, with labs 51-123. Kept as a record of the original design intent -- where the built course diverges from this document, the course is correct.
 
 This document outlines the proposed structure for the second half of a four-semester static recompilation curriculum. Semesters 1 and 2 cover theory through advanced console architectures. Semesters 3 and 4 shift focus to **production-grade tooling, automation, real-world shipping, and emerging frontiers**.
 

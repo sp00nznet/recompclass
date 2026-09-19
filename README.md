@@ -3,11 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Course Status](https://img.shields.io/badge/Course-Complete-brightgreen.svg)](#)
 [![Modules](https://img.shields.io/badge/Modules-64-blue.svg)](#)
-[![Labs](https://img.shields.io/badge/Labs-50-green.svg)](#)
+[![Labs](https://img.shields.io/badge/Labs-123-green.svg)](#)
 
 > An open course on static binary recompilation -- the art of translating compiled programs from one platform to another at the source level.
 >
-> Four semesters, 64 modules, 50 labs with reference solutions.
+> Four semesters, 64 modules, 123 labs, 67 with generated reference solutions.
 
 ---
 
@@ -180,6 +180,12 @@ Whether you are a preservationist, a reverse engineer, a systems programmer, or 
 
 3. **Start with Module 1.** Work through the units in order -- each module builds on the one before it. No rush. The first 8 modules are all foundations and theory before you recompile anything.
 
+4. **Work the labs.** Each lab lives in `labs/lab-NN/`. Fill in the functions marked `TODO` and run `python -m pytest labs/lab-NN` until it is green.
+
+   78 of the 123 labs have tests. 67 of those ship a reference solution in `labs/lab-NN/solution/` -- read it *after* you have your own version working, since the interesting part is usually where the two differ. The remaining 11 tested labs have optional stretch goals beyond what their tests cover, so there is nothing to compare against; the other 45 are written exercises with no code to run.
+
+   Solutions are generated from `tools/make_solutions.py` and CI checks that every one still passes its lab's tests, so they cannot drift away from the stubs they answer.
+
 ---
 
 ## Repository Structure
@@ -213,7 +219,7 @@ recompclass/
     unit-14-emerging-arch/      Modules 53-56   (Semester 4)
     unit-15-tooling/            Modules 57-60   (Semester 4)
     unit-16-research/           Modules 61-64   (Semester 4)
-  labs/                50 hands-on lab exercises
+  labs/                123 hands-on lab exercises
 ```
 
 ---
