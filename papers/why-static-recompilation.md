@@ -4,6 +4,8 @@
 
 *Draft — March 2026*
 
+*Written by Claude (Anthropic) from Ned's projects, notes and direction. The position argued here is his; the prose is Claude's, and he directed and corrected it throughout.*
+
 ---
 
 ## Abstract

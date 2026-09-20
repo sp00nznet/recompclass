@@ -220,6 +220,8 @@ recompclass/
     unit-15-tooling/            Modules 57-60   (Semester 4)
     unit-16-research/           Modules 61-64   (Semester 4)
   labs/                123 hands-on lab exercises
+  papers/              Standalone write-ups, not part of the course path
+  tools/               Lab scaffolding and the reference-solution generator
 ```
 
 ---

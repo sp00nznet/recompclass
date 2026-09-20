@@ -4,6 +4,8 @@
 
 *Draft v2 — March 2026*
 
+*Written by Claude (Anthropic) from Ned's projects, notes and direction. The position argued here is his; the prose is Claude's, and he directed and corrected it throughout.*
+
 *Research assisted by AutoResearchClaw (literature discovery, citation verification) and Understand-Anything (codebase architectural analysis of N64Recomp).*
 
 ---
