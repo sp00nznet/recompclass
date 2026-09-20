@@ -15,13 +15,17 @@
 
 Static recompilation is the process of disassembling a compiled binary, lifting its instructions into portable C source code, and recompiling that code to run natively on modern hardware -- no runtime emulator required. It is one of the most powerful techniques in software preservation, yet almost no structured learning material exists for it.
 
-This course changes that. Across **16 Units**, **64 Modules**, and **50 Hands-on Labs**, you will go from understanding basic binary formats to recompiling real console games for modern platforms.
+This course changes that. Across **16 Units**, **64 Modules**, and **123 Hands-on Labs**, you will go from understanding basic binary formats to recompiling real console games for modern platforms.
 
-Every module points at real, public, committed work -- specific files, specific commits, specific numbers -- rather than describing techniques in the abstract. Where a project's own README overstates what its code does, the course says so and shows you how to check. Module 37 is entirely about that skill.
+Every module points at real, public, committed work -- often down to a specific file, commit or measured number -- rather than describing techniques in the abstract. Where a project's own README overstates what its code does, the course says so and shows you how to check. Module 37 is entirely about that skill.
 
 **Semester 1** ramps up slowly. Plenty of time to get comfortable reading assembly, using the tools, and understanding the mechanical process of lifting -- all before you touch a real console target. Your first recompilations are the simplest architectures: Game Boy, NES, SNES, GBA, and DOS.
 
 **Semester 2** is where things get serious. N64, GameCube, Wii, Dreamcast, PS2, Saturn, Xbox, Xbox 360, and PS3. Multi-processor systems, GPU pipeline translation, and the hardest targets the community has tackled.
+
+**Semester 3** is the engineering that turns a proof of concept into something other people can use: automated pipelines, CI that can actually fail, differential testing and oracles, profiling and SIMD, and the legal and packaging work of shipping. Module 37, on what "it works" actually means, is the one to read first if you only read one.
+
+**Semester 4** is the frontier. Hybrid static/dynamic builds, decompilation-assisted recompilation, what machine learning can and cannot be trusted with, and architectures where the usual assumptions break -- a 4-bit CPU, a bytecode VM, undocumented hardware. It ends with contributing upstream and writing up your own results, including the negative ones.
 
 **Projects this course draws on:** [Ned Heller](https://github.com/sp00nznet) (sp00nznet) -- hobbyist and static recompilation practitioner, maintaining a public corpus of recompilation toolkits and ports spanning 25+ CPU families. Consoles (N64, SNES, Game Boy, GBA, Xbox, Xbox 360, PS2, PS3, GameCube, Wii, Dreamcast, Saturn), arcade boards (Sega Model 2/3, Lindbergh, Namco System ES3, CPS1, Midway), handhelds and phones (PSP, Vita, N-Gage, iOS, Android), home computers (Apple II, VIC-20, ZX Spectrum, 68k Macintosh), and some genuinely strange ones -- a 4-bit Tamagotchi, the Apple Newton's bytecode, and a Dreamcast VMU.
 
@@ -46,6 +50,7 @@ Whether you are a preservationist, a reverse engineer, a systems programmer, or 
 - Solid working knowledge of **C programming** (pointers, structs, bitwise operations)
 - **No prior assembly experience required** -- Module 4 teaches you to read assembly from scratch
 - Comfort with the **command line** (building projects, running scripts, navigating directories)
+- **Python 3** for most of the labs (`pip install pytest capstone pefile`); 14 labs are C and build with `make` or `cmake`
 - A Linux, macOS, or WSL environment with a C compiler and Git installed
 
 ---
@@ -200,7 +205,7 @@ recompclass/
     tool-setup.md      Environment and toolchain setup
     glossary.md        Terminology reference
     recommended-reading.md  Community resources and papers
-    architecture-reference/  CPU ISA quick references (12 architectures)
+    architecture-reference/  CPU ISA quick references (11 architectures)
     cheat-sheets/      Tool quick references
   units/
     unit-1-foundations/          Modules 1-5
