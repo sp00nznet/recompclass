@@ -138,6 +138,12 @@ jobs:
       # outside labs/, so in practice it validated almost nothing.
       - name: Validate Mermaid diagrams
         run: |
+          # GitHub's Ubuntu runners block unprivileged user namespaces via
+          # AppArmor, so Chromium cannot start its sandbox ("No usable
+          # sandbox!") and every render fails. The runner is an ephemeral VM
+          # rendering this repository's own diagrams, not untrusted input, so
+          # turning the sandbox off is the accepted fix for mermaid-cli in CI.
+          echo '{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' > /tmp/puppeteer.json
           python3 - <<'EOF'
           import os, pathlib, re, subprocess, sys, tempfile
           # Anchored to line starts: one lecture contains Python that *emits*
@@ -159,8 +165,9 @@ jobs:
                   # mmdc refuses /dev/null: it requires the output path to end in
                   # .md/.svg/.png/.pdf. Render to a temp .svg and throw it away.
                   out = tmp.name + ".svg"
-                  r = subprocess.run(["mmdc", "-i", tmp.name, "-o", out],
-                                     capture_output=True)
+                  r = subprocess.run(
+                      ["mmdc", "-p", "/tmp/puppeteer.json", "-i", tmp.name, "-o", out],
+                      capture_output=True)
                   os.unlink(tmp.name)
                   if os.path.exists(out):
                       os.unlink(out)
