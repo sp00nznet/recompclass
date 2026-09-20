@@ -70,6 +70,11 @@ jobs:
           for f in sorted(pathlib.Path("labs").glob("lab-*/*.py")):
               if f.name == "test_lab.py":
                   continue
+              # Several labs ship a module with the same basename (simple_isa.py).
+              # Popping only spec.name leaves those cached, so lab-23 picked up
+              # lab-10's simple_isa and failed on a name only its own copy defines.
+              # Drop everything this file dragged in, not just the file itself.
+              before = set(sys.modules)
               sys.path.insert(0, str(f.parent))
               spec = importlib.util.spec_from_file_location(f"{f.parent.name}_{f.stem}", f)
               mod = importlib.util.module_from_spec(spec)
@@ -79,7 +84,8 @@ jobs:
                   bad.append(f"{f}: {type(e).__name__}: {e}")
               finally:
                   sys.path.pop(0)
-                  sys.modules.pop(spec.name, None)
+                  for name in set(sys.modules) - before:
+                      sys.modules.pop(name, None)
           for b in bad:
               print("BROKEN:", b)
           sys.exit(1 if bad else 0)
@@ -150,9 +156,14 @@ jobs:
                                                     mode="w", encoding="utf-8")
                   tmp.write(block.strip())
                   tmp.close()
-                  r = subprocess.run(["mmdc", "-i", tmp.name, "-o", os.devnull],
+                  # mmdc refuses /dev/null: it requires the output path to end in
+                  # .md/.svg/.png/.pdf. Render to a temp .svg and throw it away.
+                  out = tmp.name + ".svg"
+                  r = subprocess.run(["mmdc", "-i", tmp.name, "-o", out],
                                      capture_output=True)
                   os.unlink(tmp.name)
+                  if os.path.exists(out):
+                      os.unlink(out)
                   if r.returncode != 0:
                       err = r.stderr.decode(errors="replace").strip()
                       failures.append(f"{md}: block {i} -- {err}")

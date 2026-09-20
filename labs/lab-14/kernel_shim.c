@@ -1,3 +1,8 @@
+/* clock_gettime and CLOCK_REALTIME are POSIX, not ISO C. The Makefile builds
+ * with -std=c11, which hides them on glibc unless this is requested first --
+ * and it must come before any header is included. */
+#define _POSIX_C_SOURCE 200809L
+
 #include "kernel_shim.h"
 
 #include <stdio.h>
