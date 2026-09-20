@@ -3,7 +3,10 @@ name: Build Labs
 # No path filter. The gates below depend on tools/ and on markdown outside labs/,
 # so filtering on 'labs/**' meant a change to tools/make_solutions.py -- the thing
 # that generates every reference solution -- skipped all of them.
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:      # so the gates can be run on demand, not only on a push
 
 jobs:
   build-c-labs:
