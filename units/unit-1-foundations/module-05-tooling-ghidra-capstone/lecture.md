@@ -1268,9 +1268,9 @@ Binary Ninja's BNIL (Binary Ninja Intermediate Language) is architecturally inte
 
 If you are building a recompiler with sophisticated optimization passes, Binary Ninja's IL could serve as inspiration for your own intermediate representation. However, Binary Ninja is not free, and Ghidra covers our needs.
 
-### radare2 / rizin / iaito
+### radare2 / rizin / iaito / Cutter
 
-[radare2](https://rada.re/n/) (and its fork [rizin](https://rizin.re/)) is a command-line reverse engineering framework. [iaito](https://github.com/rizinorg/iaito) is its GUI.
+[radare2](https://rada.re/n/) (and its fork [rizin](https://rizin.re/)) is a command-line reverse engineering framework. Each has its own GUI: [iaito](https://github.com/radareorg/iaito) for radare2, [Cutter](https://github.com/rizinorg/cutter) for rizin.
 
 Strengths:
 - Runs everywhere (lightweight, no JVM dependency)

@@ -1,12 +1,9 @@
 name: Build Labs
 
-on:
-  push:
-    paths:
-      - 'labs/**'
-  pull_request:
-    paths:
-      - 'labs/**'
+# No path filter. The gates below depend on tools/ and on markdown outside labs/,
+# so filtering on 'labs/**' meant a change to tools/make_solutions.py -- the thing
+# that generates every reference solution -- skipped all of them.
+on: [push, pull_request]
 
 jobs:
   build-c-labs:
@@ -19,17 +16,29 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc make cmake libsdl2-dev
 
+      # Two labs cannot build as shipped, because the thing CI would build is the
+      # exercise: lab-06's Makefile needs output.c, which the student generates by
+      # running mini_recomp.py, and lab-30's CMakeLists.txt is a set of TODOs with
+      # no project() command -- writing it *is* the lab. Building them here would
+      # mean a permanently red job, which trains everyone to ignore the result.
       - name: Build C labs
         run: |
+          SKIP="lab-06 lab-30"
+          status=0
           for dir in labs/lab-*/; do
+            name=$(basename "$dir")
+            case " $SKIP " in
+              *" $name "*) echo "skipping $name (its build output is the exercise)"; continue ;;
+            esac
             if [ -f "$dir/Makefile" ]; then
-              echo "Building $dir..."
-              make -C "$dir" || exit 1
+              echo "Building $name..."
+              make -C "$dir" || status=1
             elif [ -f "$dir/CMakeLists.txt" ]; then
-              echo "Building $dir with CMake..."
-              cmake -B "$dir/build" -S "$dir" && cmake --build "$dir/build" || exit 1
+              echo "Building $name with CMake..."
+              cmake -B "$dir/build" -S "$dir" && cmake --build "$dir/build" || status=1
             fi
           done
+          exit $status
 
   test-python-labs:
     runs-on: ubuntu-latest
@@ -113,26 +122,39 @@ jobs:
       - name: Install mermaid-cli
         run: npm install -g @mermaid-js/mermaid-cli
 
+      # One python process over every file. The old version piped `find` into a
+      # `while read` loop, so the job's exit status was whichever file happened to
+      # be validated last -- a failure in any earlier file went green. It was also
+      # gated on `paths: labs/**`, and 34 of the 35 files with diagrams live
+      # outside labs/, so in practice it validated almost nothing.
       - name: Validate Mermaid diagrams
         run: |
-          # Extract and validate all Mermaid blocks from markdown files
-          find . -name "*.md" -exec grep -l '```mermaid' {} \; | while read file; do
-            echo "Validating Mermaid in $file..."
-            python3 -c "
-          import re, sys, subprocess, tempfile, os
-          with open('$file') as f:
-              content = f.read()
-          blocks = re.findall(r'\`\`\`mermaid\n(.*?)\`\`\`', content, re.DOTALL)
-          for i, block in enumerate(blocks):
-              tmp = tempfile.NamedTemporaryFile(suffix='.mmd', delete=False, mode='w')
-              tmp.write(block)
-              tmp.close()
-              result = subprocess.run(['mmdc', '-i', tmp.name, '-o', '/dev/null'], capture_output=True)
-              os.unlink(tmp.name)
-              if result.returncode != 0:
-                  print(f'FAIL: Block {i+1} in $file')
-                  print(result.stderr.decode())
-                  sys.exit(1)
-          print(f'  {len(blocks)} diagram(s) OK')
-          "
-          done
+          python3 - <<'EOF'
+          import os, pathlib, re, subprocess, sys, tempfile
+          # Anchored to line starts: one lecture contains Python that *emits*
+          # a mermaid fence as a string literal, and an unanchored pattern
+          # matches that source as if it were a diagram.
+          FENCE = re.compile(r"^```mermaid$(.*?)^```$", re.DOTALL | re.MULTILINE)
+          failures, checked, files = [], 0, 0
+          for md in sorted(pathlib.Path(".").rglob("*.md")):
+              if ".git" in md.parts:
+                  continue
+              files += 1
+              text = md.read_text(encoding="utf-8", errors="replace")
+              for i, block in enumerate(FENCE.findall(text), 1):
+                  checked += 1
+                  tmp = tempfile.NamedTemporaryFile(suffix=".mmd", delete=False,
+                                                    mode="w", encoding="utf-8")
+                  tmp.write(block.strip())
+                  tmp.close()
+                  r = subprocess.run(["mmdc", "-i", tmp.name, "-o", os.devnull],
+                                     capture_output=True)
+                  os.unlink(tmp.name)
+                  if r.returncode != 0:
+                      err = r.stderr.decode(errors="replace").strip()
+                      failures.append(f"{md}: block {i} -- {err}")
+          print(f"checked {checked} diagram(s) across {files} markdown file(s)")
+          for f in failures:
+              print("FAIL:", f)
+          sys.exit(1 if failures else 0)
+          EOF

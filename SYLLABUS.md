@@ -279,7 +279,8 @@ flowchart TD
 
 **Labs**
 
-- Lab 5 -- Memory Bus Simulator: Implement a memory bus with bank switching for Game Boy.
+- Lab 10 -- Recursive Descent Disassembler: Implement recursive descent on a simplified ISA and build a CFG.
+- Lab 11 -- CFG Visualizer: Convert a control-flow graph to a Mermaid diagram.
 - Lab 23 -- CFG Builder: Implement recursive descent disassembly on a simplified ISA and output a DOT-format CFG.
 
 **Key References**
@@ -304,7 +305,8 @@ flowchart TD
 
 **Labs**
 
-- Lab 7 -- Flag Tracker: Implement flag computation for Z80-style CPU status.
+- Lab 12 -- Micro-Lifter: Build a small MIPS-subset instruction lifter that emits C.
+- Lab 13 -- Flag Helper Library: Build a reusable C library for 8-bit ALU status flags.
 - Lab 24 -- Flag Computation Library: Implement add/sub/and/inc/dec flag helpers with test verification.
 
 **Key References**
@@ -330,7 +332,6 @@ flowchart TD
 
 **Labs**
 
-- Lab 6 -- Mini Recompiler: Use the provided runtime to lift and run a small Z80 program.
 - Lab 25 -- Hand-Lift Z80 Subroutine: Translate a Z80 checksum routine to C and verify against expected register state.
 
 **Key References**
@@ -357,7 +358,8 @@ flowchart TD
 
 **Labs**
 
-- Lab 8 -- Game Boy Recompiler Pipeline: Walk through the gb-recompiled pipeline end to end -- ROM ingestion, disassembly, lifting, shim linking, and native build.
+- Lab 5 -- Memory Bus: Implement a Game Boy memory bus in C, with bank switching and MMIO dispatch.
+- Lab 6 -- Mini-GB Recomp: Recompile a tiny homebrew Game Boy ROM end to end using the provided runtime.
 
 **Key References**
 
@@ -406,8 +408,7 @@ flowchart TD
 
 **Labs**
 
-- Lab 9 -- Dispatch Table Generator: Build a runtime dispatch mechanism for indirect calls.
-- Lab 10 -- Recursive Disassembler: Implement recursive descent on a simplified ISA.
+- Lab 7 -- M/X Flag Tracker: Track the 65816's M and X flags to determine register widths at each instruction.
 
 **Key References**
 
@@ -458,8 +459,7 @@ flowchart TD
 
 **Labs**
 
-- Lab 11 -- CFG to Mermaid: Convert a control-flow graph to Mermaid diagram format.
-- Lab 12 -- DOS MZ Parser and Lifter: Parse a DOS MZ executable header and lift x86-16 instructions with segment handling.
+- Lab 8 -- MZ Parser: Parse a DOS MZ executable header and relocation table, and detect common packers.
 
 **Key References**
 
@@ -486,8 +486,7 @@ flowchart TD
 
 **Labs**
 
-- Lab 13 -- Flag Implementation (C): Implement CPU flag computation in C with bitwise operations.
-- Lab 14 -- Kernel Shim: Implement shims for OS kernel calls.
+- Lab 9 -- Dispatch Table Generator: Generate C dispatch tables that route indirect jumps to recompiled functions.
 
 **Key References**
 
@@ -513,7 +512,6 @@ flowchart TD
 **Labs**
 
 - Lab 15 -- Graphics Bridge: Implement an SDL2 graphics bridge for framebuffer display.
-- Lab 16 -- Recomp Output Analyzer: Analyze and validate recompiler output files.
 
 **Key References**
 
@@ -645,7 +643,7 @@ flowchart TD
 
 **Labs**
 
-- Lab 17 -- N64 ROM Analyzer: Parse an N64 ROM header, identify endianness (z64/v64/n64), and extract function boundaries using N64Recomp configuration.
+- Lab 16 -- N64Recomp Configuration: Write an N64Recomp `.toml` config and analyse the C the recompiler generates from it.
 - Lab 47 -- Endianness Conversion Library: Implement byte-swap utilities for big-endian ↔ little-endian conversion.
 
 **Key References**
@@ -745,7 +743,7 @@ flowchart TD
 
 **Labs**
 
-- Lab 19 -- Dreamcast Binary Loader: Parse a Dreamcast disc image (GD-ROM), extract the 1ST_READ.BIN executable, and set up the SH-4 memory map for disassembly.
+- None yet. This module is lecture-only; there is no Dreamcast code lab in the repository. Lab 35 (SH-2 delay slot lifting, Module 26) is the closest hands-on work on the SH family.
 
 **Key References**
 
@@ -770,7 +768,7 @@ flowchart TD
 
 **Labs**
 
-- Lab 20 -- PS2 ELF Analyzer: Parse a PS2 ELF binary, identify R5900 and VU microcode sections, and lift MMI (128-bit multimedia) instructions to C with SIMD intrinsics.
+- None yet. This module is lecture-only; there is no PS2 code lab in the repository. Lab 39 (VMX128 SIMD lifting, Module 28) covers the same 128-bit SIMD lifting problem on another PowerPC target.
 
 **Key References**
 
@@ -846,6 +844,8 @@ flowchart TD
 
 **Labs**
 
+- Lab 14 -- Kernel Shim: Shim Xbox 360 kernel imports onto Win32 or POSIX equivalents.
+- Lab 17 -- XEX2 Inspector: Parse Xbox 360 XEX2 executable headers and enumerate their sections.
 - Lab 39 -- PPC VMX128 Lifter: Lift VMX128 SIMD instructions to C with SSE intrinsics.
 
 **Key References**
@@ -901,6 +901,8 @@ flowchart TD
 
 **Labs**
 
+- Lab 19 -- NID Resolver: Implement PS3 NID hash resolution for imports in PRX/SPRX modules.
+- Lab 20 -- SPU DMA Simulator: Simulate the SPU's 256KB local store and its DMA transfer rules.
 - Lab 42 -- SPU Task Scheduler: Implement a simple SPU task scheduler for 6 SPE contexts.
 - Lab 43 -- Cell PPU/SPU Memory Bridge: Implement the DMA bridge between PPU main memory and SPU local stores.
 

@@ -259,7 +259,7 @@ Static recompilation has grown from scattered individual efforts into a real com
 
 **Xbox 360 / PowerPC:** **[rexdex](https://github.com/rexdex/recompiler)** built the foundational Xbox 360 static recompiler that proved the concept was viable. Building on that work, **Skyth** ([hedge-dev](https://github.com/hedge-dev)) created **[XenonRecomp](https://github.com/hedge-dev/XenonRecomp)** and **[XenosRecomp](https://github.com/hedge-dev/XenosRecomp)** (for GPU shader translation), which together with **Sajid's** XenonAnalyse powered the **[UnleashedRecomp](https://github.com/hedge-dev/UnleashedRecomp)** project -- a full PC port of Sonic Unleashed from Xbox 360. The **[RexGlueSDK](https://github.com/rexglue/rexglue-sdk)** by tomcl7 provides another Xbox 360 recompilation runtime built on these foundations.
 
-**Game Boy:** **[arcanite24](https://github.com/arcanite24)** (Brandon G. Neri) built **[gb-recompiled](https://github.com/arcanite24/gb-recompiled)**, a Game Boy static recompiler that successfully processes 98.9% of the tested ROM library. Its advanced static solver for JP HL and CALL HL instructions and trace-guided recompilation for complex games demonstrate how much can be done even on simpler architectures.
+**Game Boy:** **[arcanite24](https://github.com/arcanite24)** (Brandon G. Neri) built **[gb-recompiled](https://github.com/arcanite24/gb-recompiled)**, a Game Boy static recompiler that reports successfully processing 98.9% of its tested ROM library. Its advanced static solver for JP HL and CALL HL instructions and trace-guided recompilation for complex games demonstrate how much can be done even on simpler architectures.
 
 **SNES:** **Andrea Orru** ([AndreaOrru](https://github.com/AndreaOrru)) created **[Gilgamesh](https://github.com/AndreaOrru/gilgamesh)**, a SNES reverse engineering toolkit with static recompilation support for the 65C816.
 
@@ -279,7 +279,7 @@ Grouped by what makes each one instructive:
 
 | Target | CPU | Toolkit |
 |---|---|---|
-| Game Boy | SM83 | [gb-recompiled](https://github.com/sp00nznet/gb-recompiled) |
+| Game Boy | SM83 | [gb-recompiled](https://github.com/sp00nznet/gb-recompiled) (a fork of [arcanite24/gb-recompiled](https://github.com/arcanite24/gb-recompiled), above) |
 | SNES | 65816 | [snesrecomp](https://github.com/sp00nznet/snesrecomp) |
 | Game Boy Advance | ARM7TDMI | [gbarecomp](https://github.com/sp00nznet/gbarecomp) |
 | DOS / Win16 / Win32 | x86 | [pcrecomp](https://github.com/sp00nznet/pcrecomp) |
@@ -317,7 +317,7 @@ in an afternoon -- see [pacrecomp](https://github.com/sp00nznet/pacrecomp) and
 2005 PC, so the "ROM" is a 32-bit x86 ELF) ·
 [systemes3recomp](https://github.com/sp00nznet/systemes3recomp) (Namco System ES3) ·
 [cps1recomp](https://github.com/sp00nznet/cps1recomp) (Capcom CPS1) ·
-[MidwayRecomp](https://github.com/sp00nznet/MidwayRecomp) (Midway Seattle/Vegas, MIPS-IV)
+[MidwayRecomp](https://github.com/sp00nznet/MidwayRecomp) (Midway Seattle/Vegas, MIPS-IV -- a fork of [N64Recomp](https://github.com/N64Recomp/N64Recomp) with R5000 extensions)
 
 **Handhelds and phones, where the OS is the hard part**
 

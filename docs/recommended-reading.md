@@ -132,7 +132,7 @@ The following projects by [sp00nznet](https://github.com/sp00nznet) (Ned Heller)
 ### Recompilation Toolkits
 
 **gb-recompiled** -- [github.com/sp00nznet/gb-recompiled](https://github.com/sp00nznet/gb-recompiled)
-A recompiler for the Game Boy's SM83 CPU. A good starting point for learning because the SM83 has a small instruction set and simple memory model, making the full pipeline easy to follow.
+A fork of [arcanite24/gb-recompiled](https://github.com/arcanite24/gb-recompiled) by Brandon G. Neri, which is where the recompiler and base runtime come from; the fork extends the runtime. A recompiler for the Game Boy's SM83 CPU. A good starting point for learning because the SM83 has a small instruction set and simple memory model, making the full pipeline easy to follow.
 
 **snesrecomp** -- [github.com/sp00nznet/snesrecomp](https://github.com/sp00nznet/snesrecomp)
 A recompiler for the 65816 processor used in the SNES. Demonstrates handling of bank switching, variable-width registers (8/16-bit accumulator and index modes), and the 65816's many addressing modes.
@@ -162,7 +162,7 @@ Four Xenon PPC titles recompiled with XenonRecomp against the [ReXGlue SDK](http
 Neo Geo MVS/AES runtime for 68000-based arcade hardware recompilation.
 
 **MidwayRecomp** -- [github.com/sp00nznet/MidwayRecomp](https://github.com/sp00nznet/MidwayRecomp)
-MIPS-IV recompiler for Midway arcade hardware. Demonstrates recompilation of arcade board targets beyond home consoles.
+A fork of [N64Recomp](https://github.com/N64Recomp/N64Recomp) with R5000 extensions. MIPS-IV recompiler for Midway arcade hardware. Demonstrates recompilation of arcade board targets beyond home consoles.
 
 **genrecomp** -- [github.com/sp00nznet/genrecomp](https://github.com/sp00nznet/genrecomp)
 Genesis/Mega Drive recompilation toolkit.

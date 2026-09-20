@@ -3,7 +3,7 @@
 ## Objective
 
 Generate C dispatch tables for handling indirect jumps in recompiled code.
-This addresses the core problem from Module 7: when the original binary
+This addresses the core problem from Module 14: when the original binary
 performs an indirect jump (e.g., `JMP [table + reg*4]`), the recompiled code
 needs a mechanism to route execution to the correct recompiled function.
 
