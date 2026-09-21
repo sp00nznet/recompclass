@@ -40,6 +40,36 @@ Thank you for your interest in contributing to the Static Recompilation open cou
 - All code examples must compile/run as shown
 - No copyrighted ROMs or binaries -- homebrew and open-source test programs only
 
+### Repository Layout
+
+- **The root holds `README.md`, `CONTRIBUTING.md`, `LICENSE` and `SYLLABUS.md`.
+  Every other document goes in `docs/`.** A root directory is the first thing a
+  reader sees, and it should tell them what the project is and how to start --
+  not present them with a dozen working notes to triage. If a file is
+  reference material, a design note, a progress log or a handoff, it belongs in
+  `docs/`.
+- **Working notes and tool-specific files are not exempt.** A file named for the
+  tool that produced it (`CLAUDE.md`, `AGENTS.md`, `.cursorrules` and the like)
+  either contains real project documentation, in which case give it a name that
+  says what it is and put it in `docs/`, or it contains nothing a reader needs,
+  in which case do not commit it.
+
+### Linking to Other Repositories
+
+- **Never link a private repository from a README, a lecture or any other
+  reader-facing document.** A private link is a 404 for everyone except its
+  owner, and it is worse than no link at all: it reads as evidence while
+  supplying none. Before citing a repository, confirm it is public. If the work
+  it points at is not ready to publish, describe the finding in the text and
+  leave the link out until it is.
+- **This applies transitively.** A public repository whose README links to a
+  private one hands the reader the same dead end one step later. If you make
+  something public, check what it links to.
+- **Credit upstream when you are working from a fork.** Check the repository's
+  `fork` flag rather than trusting its description -- a manual copy will not
+  advertise itself. Say whose work it builds on, at the first mention, not only
+  in an acknowledgements list at the bottom.
+
 ### Code Standards
 - Lab code should be in C (recompiler code) or Python (analysis tools)
 - Include comments explaining non-obvious logic
@@ -113,4 +143,12 @@ the generated file.
 
 CI cannot run the labs to completion (that needs the stubs filled in), so it
 gates on what is always true: every lab module imports, every test file
-collects, the solutions are current, and every solution passes its own tests.
+collects, the solutions are current, every solution passes its own tests, every
+Mermaid diagram renders, and the C labs build.
+
+The two rules above are checked too, by `tools/check_repo_rules.py`. Run it
+yourself with `python tools/check_repo_rules.py`; the link rule needs network
+access, and unauthenticated GitHub allows sixty requests an hour, so set
+`GITHUB_TOKEN` for a complete result. Without one it exits 2 and says the run
+was inconclusive rather than reporting a pass it did not earn -- `--layout`
+skips the network entirely.
