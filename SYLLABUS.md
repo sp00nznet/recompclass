@@ -337,6 +337,8 @@ flowchart TD
 **Key References**
 
 - [gb-recompiled](https://github.com/sp00nznet/gb-recompiled)
+- Architecture reference: `docs/architecture-reference/z80.md` (see its Z80 vs SM83 table -- this module's worked example uses the reduced SM83 flag set)
+- Architecture reference: `docs/architecture-reference/sm83.md`
 
 ---
 

@@ -59,3 +59,5 @@ The starter code uses helper macros/functions for flag computation:
 - `SET_H_SUB(a, b)` -- sets H flag for subtraction half-borrow
 - `SET_C_ADD(a, b)` -- sets C flag for addition carry
 - `SET_C_SUB(a, b)` -- sets C flag for subtraction borrow
+- `SET_H(flag)` -- sets or clears the H flag directly (AND sets it, OR/XOR clear it)
+- `SET_C(flag)` -- sets or clears the C flag directly (AND/OR/XOR all clear it)

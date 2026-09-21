@@ -94,3 +94,87 @@ class TestDumpExports:
         # Should produce some output without crashing
         output = capsys.readouterr().out
         assert len(output) > 0
+
+
+class TestExports:
+    """dump_exports was a TODO that no test exercised."""
+
+    def _pe_with_exports(self):
+        pe = MagicMock()
+        sym1 = MagicMock()
+        sym1.name = b"CreateWidget"
+        sym1.ordinal = 1
+        sym2 = MagicMock()
+        sym2.name = None          # exported by ordinal only
+        sym2.ordinal = 2
+        pe.DIRECTORY_ENTRY_EXPORT.symbols = [sym1, sym2]
+        return pe
+
+    def _capture(self, fn, *args):
+        old, sys.stdout = sys.stdout, StringIO()
+        try:
+            fn(*args)
+            return sys.stdout.getvalue()
+        finally:
+            sys.stdout = old
+
+    def test_lists_named_export(self):
+        out = self._capture(pe_explorer.dump_exports, self._pe_with_exports())
+        assert "CreateWidget" in out
+
+    def test_lists_ordinal(self):
+        out = self._capture(pe_explorer.dump_exports, self._pe_with_exports())
+        assert "1" in out and "2" in out
+
+    def test_unnamed_export_does_not_crash(self):
+        out = self._capture(pe_explorer.dump_exports, self._pe_with_exports())
+        assert "not yet implemented" not in out
+
+    def test_no_export_directory(self):
+        pe = MagicMock()
+        del pe.DIRECTORY_ENTRY_EXPORT
+        out = self._capture(pe_explorer.dump_exports, pe)
+        assert "no exports" in out.lower()
+
+
+class TestResources:
+    """dump_resources was a TODO that no test exercised."""
+
+    def _capture(self, fn, *args):
+        old, sys.stdout = sys.stdout, StringIO()
+        try:
+            fn(*args)
+            return sys.stdout.getvalue()
+        finally:
+            sys.stdout = old
+
+    def _pe_with_resources(self):
+        pe = MagicMock()
+        leaf = MagicMock()
+        del leaf.directory
+        leaf.name = None
+        leaf.id = 101
+        leaf.data.struct.Size = 512
+
+        branch = MagicMock()
+        branch.name = "ICON"
+        branch.id = None
+        branch.directory.entries = [leaf]
+
+        pe.DIRECTORY_ENTRY_RESOURCE.entries = [branch]
+        return pe
+
+    def test_walks_into_subdirectory(self):
+        out = self._capture(pe_explorer.dump_resources, self._pe_with_resources())
+        assert "ICON" in out
+        assert "101" in out
+
+    def test_reports_leaf_size(self):
+        out = self._capture(pe_explorer.dump_resources, self._pe_with_resources())
+        assert "512" in out
+
+    def test_no_resource_directory(self):
+        pe = MagicMock()
+        del pe.DIRECTORY_ENTRY_RESOURCE
+        out = self._capture(pe_explorer.dump_resources, pe)
+        assert "no resources" in out.lower()

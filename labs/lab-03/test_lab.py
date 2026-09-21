@@ -53,7 +53,5 @@ class TestDetectArchitecture:
 
     def test_detect_x86(self):
         arch, confidence = multi_disasm.detect_architecture(multi_disasm.X86_32_BYTES)
-        # Once implemented, this should detect x86-32
-        if arch != "unknown":
-            assert arch == "x86-32", f"Expected x86-32, got {arch}"
-            assert confidence > 0.5
+        assert arch == "x86-32", f"Expected x86-32, got {arch}"
+        assert confidence > 0.5

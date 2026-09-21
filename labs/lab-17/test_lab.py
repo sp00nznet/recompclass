@@ -30,6 +30,10 @@ def check(condition, msg):
         tests_passed += 1
     else:
         print(f"  FAIL: {msg}")
+    # Without this, every test in this file passes under pytest no matter what
+    # it found -- the counters are only read by the __main__ runner below, and
+    # CI runs pytest. A check that cannot fail is not a check (Module 35).
+    assert condition, msg
 
 
 def build_minimal_xex2(

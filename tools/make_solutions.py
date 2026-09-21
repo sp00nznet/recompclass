@@ -3454,13 +3454,408 @@ impl("lab-121", "harnessval.py", "validate_harness", r"""
 """)
 
 
+# ------------------------------------------------------------------ lab-04
+impl("lab-04", "sm83_lifter.py", "lift_sub_a", r"""
+    if src_reg == "(hl)":
+        src_expr = "mem_read8(cpu.h << 8 | cpu.l)"
+    else:
+        src_expr = f"cpu.{src_reg}"
+    return (
+        f"{{ uint8_t prev = cpu.a; uint8_t val = {src_expr}; "
+        f"cpu.a = (cpu.a - val) & 0xFF; "
+        f"SET_Z(cpu.a); SET_N(1); "
+        f"SET_H_SUB(prev, val); SET_C_SUB(prev, val); }}"
+    )
+""")
+impl("lab-04", "sm83_lifter.py", "lift_inc", r"""
+    if reg == "(hl)":
+        return (
+            "{ uint16_t addr = cpu.h << 8 | cpu.l; "
+            "uint8_t prev = mem_read8(addr); "
+            "uint8_t res = (prev + 1) & 0xFF; mem_write8(addr, res); "
+            "SET_Z(res); SET_N(0); SET_H_ADD(prev, 1); }"
+        )
+    return (
+        f"{{ uint8_t prev = cpu.{reg}; "
+        f"cpu.{reg} = (cpu.{reg} + 1) & 0xFF; "
+        f"SET_Z(cpu.{reg}); SET_N(0); SET_H_ADD(prev, 1); }}"
+    )
+""")
+impl("lab-04", "sm83_lifter.py", "lift_dec", r"""
+    if reg == "(hl)":
+        return (
+            "{ uint16_t addr = cpu.h << 8 | cpu.l; "
+            "uint8_t prev = mem_read8(addr); "
+            "uint8_t res = (prev - 1) & 0xFF; mem_write8(addr, res); "
+            "SET_Z(res); SET_N(1); SET_H_SUB(prev, 1); }"
+        )
+    return (
+        f"{{ uint8_t prev = cpu.{reg}; "
+        f"cpu.{reg} = (cpu.{reg} - 1) & 0xFF; "
+        f"SET_Z(cpu.{reg}); SET_N(1); SET_H_SUB(prev, 1); }}"
+    )
+""")
+impl("lab-04", "sm83_lifter.py", "lift_cp", r"""
+    if src_reg == "(hl)":
+        src_expr = "mem_read8(cpu.h << 8 | cpu.l)"
+    else:
+        src_expr = f"cpu.{src_reg}"
+    # CP is SUB that throws the result away: flags only, A untouched.
+    return (
+        f"{{ uint8_t val = {src_expr}; "
+        f"uint8_t res = (cpu.a - val) & 0xFF; "
+        f"SET_Z(res); SET_N(1); "
+        f"SET_H_SUB(cpu.a, val); SET_C_SUB(cpu.a, val); }}"
+    )
+""")
+impl("lab-04", "sm83_lifter.py", "lift_and_a", r"""
+    if src_reg == "(hl)":
+        src_expr = "mem_read8(cpu.h << 8 | cpu.l)"
+    else:
+        src_expr = f"cpu.{src_reg}"
+    # AND is the odd one out: H is always 1.
+    return (
+        f"{{ uint8_t val = {src_expr}; cpu.a = cpu.a & val; "
+        f"SET_Z(cpu.a); SET_N(0); SET_H(1); SET_C(0); }}"
+    )
+""")
+impl("lab-04", "sm83_lifter.py", "lift_or_a", r"""
+    if src_reg == "(hl)":
+        src_expr = "mem_read8(cpu.h << 8 | cpu.l)"
+    else:
+        src_expr = f"cpu.{src_reg}"
+    return (
+        f"{{ uint8_t val = {src_expr}; cpu.a = cpu.a | val; "
+        f"SET_Z(cpu.a); SET_N(0); SET_H(0); SET_C(0); }}"
+    )
+""")
+impl("lab-04", "sm83_lifter.py", "lift_xor_a", r"""
+    if src_reg == "(hl)":
+        src_expr = "mem_read8(cpu.h << 8 | cpu.l)"
+    else:
+        src_expr = f"cpu.{src_reg}"
+    return (
+        f"{{ uint8_t val = {src_expr}; cpu.a = cpu.a ^ val; "
+        f"SET_Z(cpu.a); SET_N(0); SET_H(0); SET_C(0); }}"
+    )
+""")
+impl("lab-04", "sm83_lifter.py", "lift_jp", r"""
+    target = f"0x{addr:04x}"
+    if condition is None or condition == "always":
+        return f"cpu.pc = {target}; goto dispatch;"
+
+    cond_map = {
+        "z":  "FLAG_Z(cpu.f)",
+        "nz": "!FLAG_Z(cpu.f)",
+        "c":  "FLAG_C(cpu.f)",
+        "nc": "!FLAG_C(cpu.f)",
+    }
+    cond_expr = cond_map.get(condition, condition)
+    return f"if ({cond_expr}) {{ cpu.pc = {target}; goto dispatch; }}"
+""")
+impl("lab-04", "sm83_lifter.py", "lift_call", r"""
+    # CALL is three bytes, so the return address is PC + 3.
+    push_and_jump = (
+        "{ uint16_t ret = cpu.pc + 3; "
+        "cpu.sp -= 2; "
+        "mem_write8(cpu.sp, ret & 0xFF); "
+        "mem_write8(cpu.sp + 1, (ret >> 8) & 0xFF); "
+        f"cpu.pc = 0x{addr:04x}; goto dispatch; }}"
+    )
+    if condition is None or condition == "always":
+        return push_and_jump
+
+    cond_map = {
+        "z":  "FLAG_Z(cpu.f)",
+        "nz": "!FLAG_Z(cpu.f)",
+        "c":  "FLAG_C(cpu.f)",
+        "nc": "!FLAG_C(cpu.f)",
+    }
+    cond_expr = cond_map.get(condition, condition)
+    return f"if ({cond_expr}) {push_and_jump}"
+""")
+impl("lab-04", "sm83_lifter.py", "lift_push", r"""
+    hi, lo = REG16_TABLE[reg_pair_idx]
+    return (
+        f"{{ cpu.sp -= 2; "
+        f"mem_write8(cpu.sp + 1, cpu.{hi}); "
+        f"mem_write8(cpu.sp, cpu.{lo}); }}"
+    )
+""")
+impl("lab-04", "sm83_lifter.py", "lift_pop", r"""
+    hi, lo = REG16_TABLE[reg_pair_idx]
+    lines = [
+        f"cpu.{lo} = mem_read8(cpu.sp);",
+        f"cpu.{hi} = mem_read8(cpu.sp + 1);",
+        "cpu.sp += 2;",
+    ]
+    if lo == "f":
+        # The low nibble of F does not exist on the SM83; POP AF must not
+        # resurrect bits that no instruction can ever set.
+        lines.insert(1, "cpu.f &= 0xF0;")
+    return "{ " + " ".join(lines) + " }"
+""")
+
+# ------------------------------------------------------------------ lab-12
+impl("lab-12", "mips_lifter.py", "MipsLifter.lift_addi", r"""
+    if instr.rt == 0:
+        return "/* ADDI to $zero -- discarded */"
+    return f"{reg(instr.rt)} = {reg(instr.rs)} + {instr.imm};"
+""")
+impl("lab-12", "mips_lifter.py", "MipsLifter.lift_sub", r"""
+    if instr.rd == 0:
+        return "/* SUB to $zero -- discarded */"
+    return f"{reg(instr.rd)} = {reg(instr.rs)} - {reg(instr.rt)};"
+""")
+impl("lab-12", "mips_lifter.py", "MipsLifter.lift_and", r"""
+    if instr.rd == 0:
+        return "/* AND to $zero -- discarded */"
+    return f"{reg(instr.rd)} = {reg(instr.rs)} & {reg(instr.rt)};"
+""")
+impl("lab-12", "mips_lifter.py", "MipsLifter.lift_or", r"""
+    if instr.rd == 0:
+        return "/* OR to $zero -- discarded */"
+    return f"{reg(instr.rd)} = {reg(instr.rs)} | {reg(instr.rt)};"
+""")
+impl("lab-12", "mips_lifter.py", "MipsLifter.lift_xor", r"""
+    if instr.rd == 0:
+        return "/* XOR to $zero -- discarded */"
+    return f"{reg(instr.rd)} = {reg(instr.rs)} ^ {reg(instr.rt)};"
+""")
+impl("lab-12", "mips_lifter.py", "MipsLifter.lift_sw", r"""
+    # A store has no destination register, so there is no $zero guard here:
+    # SW $zero, 0(rs) is a legitimate way to write a zero to memory.
+    offset_expr = (
+        f"{reg(instr.rs)} + {instr.imm}" if instr.imm != 0 else reg(instr.rs)
+    )
+    return f"*(uint32_t *)(ctx->mem + {offset_expr}) = {reg(instr.rt)};"
+""")
+impl("lab-12", "mips_lifter.py", "MipsLifter.lift_beq", r"""
+    # The offset is relative to the *next* instruction, hence the + 4.
+    target = instr.address + 4 + (instr.imm * 4)
+    return (
+        f"if ({reg(instr.rs)} == {reg(instr.rt)}) "
+        f"goto label_{target:08X};"
+    )
+""")
+
+
+# ------------------------------------------------------------------ lab-02
+impl("lab-02", "pe_explorer.py", "dump_exports", r"""
+    if not hasattr(pe, "DIRECTORY_ENTRY_EXPORT"):
+        print("  (no exports)")
+    else:
+        for symbol in pe.DIRECTORY_ENTRY_EXPORT.symbols:
+            if symbol.name:
+                name = symbol.name.decode("utf-8", errors="replace")
+            else:
+                name = "(unnamed)"
+            print(f"  {symbol.ordinal:<6d} {name}")
+""")
+impl("lab-02", "pe_explorer.py", "dump_resources", r"""
+    if not hasattr(pe, "DIRECTORY_ENTRY_RESOURCE"):
+        print("  (no resources)")
+    else:
+        def walk(entries, depth):
+            pad = "  " * (depth + 1)
+            for entry in entries:
+                label = entry.name if entry.name is not None else f"ID {entry.id}"
+                print(f"{pad}{label}")
+                if hasattr(entry, "directory"):
+                    walk(entry.directory.entries, depth + 1)
+                elif hasattr(entry, "data"):
+                    print(f"{pad}  ({entry.data.struct.Size} bytes)")
+
+        walk(pe.DIRECTORY_ENTRY_RESOURCE.entries, indent)
+""")
+
+# ------------------------------------------------------------------ lab-03
+impl("lab-03", "multi_disasm.py", "detect_architecture", r"""
+    ratios = {name: decode_ratio(data, name) for name in ARCH_PRESETS}
+    if not ratios:
+        return ("unknown", 0.0)
+
+    # A decode ratio only says the bytes *can* be decoded as an architecture,
+    # and these samples decode cleanly as both x86-32 and x86-64 -- the
+    # encodings are identical for this instruction mix. A prologue says the
+    # bytes were probably *written* for one, so it has to be able to break a
+    # tie between two perfect scores. Keep it out of the ratio and add it at
+    # ranking time; clamping first would throw the tiebreak away.
+    bonus = {name: 0.0 for name in ratios}
+    prologues = [
+        ("x86-32", data[:3] == b"\x55\x89\xE5"),   # push ebp; mov ebp, esp
+        ("mips32", data[:2] == b"\x27\xBD"),        # addiu $sp, ...
+        ("ppc32", data[:2] == b"\x94\x21"),         # stwu r1, ...
+    ]
+    for arch_name, matched in prologues:
+        if matched and arch_name in bonus:
+            bonus[arch_name] = 0.3
+
+    best = max(ratios, key=lambda name: (ratios[name] + bonus[name], name))
+    if ratios[best] + bonus[best] <= 0.0:
+        return ("unknown", 0.0)
+    return (best, min(1.0, ratios[best] + bonus[best]))
+""")
+
+# ------------------------------------------------------------------ lab-10
+impl("lab-10", "recursive_disasm.py", "RecursiveDescentDisassembler.detect_unreachable_code", r"""
+    regions = []
+    start = None
+    addr = 0
+    while addr < len(self.data):
+        if addr in self._visited:
+            if start is not None:
+                regions.append((start, addr - start))
+                start = None
+        else:
+            if start is None:
+                start = addr
+        addr += INSTRUCTION_WIDTH
+
+    if start is not None:
+        regions.append((start, len(self.data) - start))
+    return regions
+""")
+
+# ------------------------------------------------------------------ lab-11
+impl("lab-11", "cfg_to_mermaid.py", "compute_dominators", r"""
+    nodes = set(adj) | {succ for succs in adj.values() for succ in succs}
+    if entry not in nodes:
+        return {}
+
+    preds = {n: [] for n in nodes}
+    for n, succs in adj.items():
+        for succ in succs:
+            preds[succ].append(n)
+
+    # Reverse postorder of a DFS from the entry: processing nodes in this order
+    # means a node's predecessors are usually already final, so the fixpoint
+    # converges in very few passes.
+    order = []
+    seen = set()
+
+    def dfs(n):
+        seen.add(n)
+        for succ in adj.get(n, []):
+            if succ not in seen:
+                dfs(succ)
+        order.append(n)
+
+    dfs(entry)
+    rpo = list(reversed(order))
+    reachable = set(rpo)
+    position = {n: i for i, n in enumerate(rpo)}
+
+    idom = {entry: entry}
+
+    def intersect(a, b):
+        while a != b:
+            while position[a] > position[b]:
+                a = idom[a]
+            while position[b] > position[a]:
+                b = idom[b]
+        return a
+
+    changed = True
+    while changed:
+        changed = False
+        for n in rpo:
+            if n == entry:
+                continue
+            candidates = [p for p in preds[n] if p in reachable and p in idom]
+            if not candidates:
+                continue
+            new_idom = candidates[0]
+            for p in candidates[1:]:
+                new_idom = intersect(p, new_idom)
+            if idom.get(n) != new_idom:
+                idom[n] = new_idom
+                changed = True
+
+    return idom
+""")
+impl("lab-11", "cfg_to_mermaid.py", "generate_dominator_tree_mermaid", r"""
+    lines = ["graph TD"]
+    for node in sorted(dominators):
+        lines.append(f'    dom_{node:04X}["0x{node:04X}"]')
+    for node, parent in sorted(dominators.items()):
+        if node == entry or node == parent:
+            continue
+        lines.append(f"    dom_{parent:04X} --> dom_{node:04X}")
+    return "\n".join(lines)
+""")
+impl("lab-11", "cfg_to_mermaid.py", "detect_natural_loops", r"""
+    idom = compute_dominators(adj, entry)
+    if not idom:
+        return []
+
+    def dominates(a, b):
+        # Walk b up the dominator tree looking for a.
+        cur = b
+        while True:
+            if cur == a:
+                return True
+            parent = idom.get(cur)
+            if parent is None or parent == cur:
+                return False
+            cur = parent
+
+    preds = {}
+    for n, succs in adj.items():
+        for succ in succs:
+            preds.setdefault(succ, []).append(n)
+
+    loops = []
+    for n, succs in adj.items():
+        if n not in idom:
+            continue
+        for header in succs:
+            # A back edge is one whose target dominates its source.
+            if header not in idom or not dominates(header, n):
+                continue
+            # The natural loop is everything that reaches n without passing
+            # through the header, plus the header itself.
+            body = {header, n}
+            stack = [n]
+            while stack:
+                cur = stack.pop()
+                for p in preds.get(cur, []):
+                    if p not in body:
+                        body.add(p)
+                        stack.append(p)
+            loops.append(body)
+    return loops
+""")
+
+# ------------------------------------------------------------------ lab-18
+impl("lab-18", "dol_parser.py", "validate_sections", r"""
+    # Two sections claiming the same memory means one silently wins at load
+    # time, and which one depends on load order.
+    ordered = sorted(hdr.all_sections, key=lambda s: s.load_address)
+    for prev, cur in zip(ordered, ordered[1:]):
+        prev_end = prev.load_address + prev.size
+        if prev_end > cur.load_address:
+            warnings.append(
+                f"{prev.section_type}{prev.index} overlaps "
+                f"{cur.section_type}{cur.index} in memory: "
+                f"0x{prev.load_address:08X}-0x{prev_end:08X} vs "
+                f"0x{cur.load_address:08X}"
+            )
+""")
+
+
 # ==========================================================================
 # Machinery
 # ==========================================================================
 
 TODO_BLOCK = re.compile(
     r"(?:^[ \t]*#[^\n]*\n)*"            # the comment block (TODO + continuation lines)
-    r"^[ \t]*(?:pass|raise NotImplementedError\([^\n]*\))[ \t]*\n",
+    r"(?:^[ \t]*\n)*"                    # blank lines before the terminator
+    # Terminator: `pass`, a NotImplementedError, or the printed placeholder
+    # the display-oriented labs use instead of a bare `pass`.
+    r"^[ \t]*(?:pass"
+    r"|raise NotImplementedError\([^\n]*\)"
+    r"|print\(\"  \(not yet implemented\)\"\))?[ \t]*\n",
     re.MULTILINE,
 )
 

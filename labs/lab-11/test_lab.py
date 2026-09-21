@@ -11,6 +11,9 @@ from cfg_to_mermaid import (
     generate_mermaid,
     adjacency_list_to_mermaid,
     _sanitize_node_id,
+    compute_dominators,
+    generate_dominator_tree_mermaid,
+    detect_natural_loops,
 )
 
 
@@ -192,3 +195,58 @@ class TestSanitizeNodeId(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestDominators(unittest.TestCase):
+    """compute_dominators was a TODO that no test exercised."""
+
+    # 0 -> 1 -> 3
+    #  \-> 2 -/
+    DIAMOND = {0: [1, 2], 1: [3], 2: [3], 3: []}
+
+    def test_entry_dominates_itself(self):
+        idom = compute_dominators(self.DIAMOND, 0)
+        self.assertEqual(idom[0], 0)
+
+    def test_branch_arms_dominated_by_entry(self):
+        idom = compute_dominators(self.DIAMOND, 0)
+        self.assertEqual(idom[1], 0)
+        self.assertEqual(idom[2], 0)
+
+    def test_join_point_dominated_by_entry_not_an_arm(self):
+        # 3 is reachable through either arm, so neither arm dominates it.
+        idom = compute_dominators(self.DIAMOND, 0)
+        self.assertEqual(idom[3], 0)
+
+    def test_chain(self):
+        idom = compute_dominators({0: [1], 1: [2], 2: []}, 0)
+        self.assertEqual(idom[1], 0)
+        self.assertEqual(idom[2], 1)
+
+    def test_dominator_tree_renders(self):
+        idom = compute_dominators(self.DIAMOND, 0)
+        out = generate_dominator_tree_mermaid(idom, 0)
+        self.assertTrue(out.startswith("graph"))
+        self.assertIn("-->", out)
+
+
+class TestNaturalLoops(unittest.TestCase):
+    """detect_natural_loops was a TODO that no test exercised."""
+
+    def test_simple_loop(self):
+        # 0 -> 1 -> 2 -> 1 (back edge), 2 -> 3
+        loops = detect_natural_loops({0: [1], 1: [2], 2: [1, 3], 3: []}, 0)
+        self.assertEqual(len(loops), 1)
+        self.assertEqual(loops[0], {1, 2})
+
+    def test_self_loop(self):
+        loops = detect_natural_loops({0: [1], 1: [1, 2], 2: []}, 0)
+        self.assertEqual(len(loops), 1)
+        self.assertIn(1, loops[0])
+
+    def test_no_loop(self):
+        self.assertEqual(detect_natural_loops({0: [1], 1: [2], 2: []}, 0), [])
+
+    def test_loop_excludes_exit_block(self):
+        loops = detect_natural_loops({0: [1], 1: [2], 2: [1, 3], 3: []}, 0)
+        self.assertNotIn(3, loops[0])

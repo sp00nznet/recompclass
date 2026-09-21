@@ -24,6 +24,10 @@ def check(condition, msg):
         tests_passed += 1
     else:
         print(f"  FAIL: {msg}")
+    # Without this, every test in this file passes under pytest no matter what
+    # it found -- the counters are only read by the __main__ runner below, and
+    # CI runs pytest. A check that cannot fail is not a check (Module 35).
+    assert condition, msg
 
 
 # ---------------------------------------------------------------------------
@@ -145,22 +149,34 @@ def test_database_verification():
     db = NidDatabase()
     db.load(db_path)
 
-    # We test a few known-good names where the NID should definitely match.
-    # (These use standard SHA-1 hashing with no suffix.)
-    test_names = ["printf", "malloc", "free", "memcpy", "memset", "strlen"]
-
     import hashlib
-    for name in test_names:
-        stored_nid = db.lookup_name(name)
-        if stored_nid is not None:
-            computed = compute_nid(name)
-            matches = (stored_nid == computed)
-            check(
-                matches,
-                f"NID verification for '{name}': "
-                f"stored=0x{stored_nid:08X}, computed=0x{computed:08X}"
-            )
-        # If not in database, skip (not a failure of the computation).
+
+    # compute_nid must be the plain unsalted hash it claims to be.
+    for name in ["printf", "malloc", "free", "memcpy", "memset", "strlen"]:
+        expected = int.from_bytes(
+            hashlib.sha1(name.encode("utf-8")).digest()[:4], "big")
+        check(compute_nid(name) == expected,
+              f"compute_nid('{name}') should be the first 4 bytes of SHA-1")
+
+    # And now the point of the lab: not one entry in the shipped database is a
+    # plain hash of its own name. Real PS3 NIDs are salted with a per-library
+    # suffix before hashing, which is why looking a name up cannot be done by
+    # hashing it and why the suffix TODO in nid_resolver.py exists at all.
+    unsalted_hits = 0
+    checked = 0
+    for name in ["printf", "malloc", "free", "memcpy", "memset", "strlen"]:
+        stored = db.lookup_name(name)
+        if stored is None:
+            continue
+        checked += 1
+        if stored == compute_nid(name):
+            unsalted_hits += 1
+
+    check(checked > 0, "the database should contain some of these names")
+    check(unsalted_hits == 0,
+          f"{unsalted_hits} of {checked} database NIDs matched an unsalted "
+          f"hash -- if this ever fires, the database is synthetic, not real "
+          f"PS3 data")
 
 
 # ---------------------------------------------------------------------------

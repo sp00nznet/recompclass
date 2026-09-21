@@ -28,6 +28,10 @@ def check(condition, msg):
         tests_passed += 1
     else:
         print(f"  FAIL: {msg}")
+    # Without this, every test in this file passes under pytest no matter what
+    # it found -- the counters are only read by the __main__ runner below, and
+    # CI runs pytest. A check that cannot fail is not a check (Module 35).
+    assert condition, msg
 
 
 def build_minimal_dol(
@@ -152,12 +156,21 @@ def test_validation():
     """Test that validation catches out-of-bounds sections."""
     print("--- test_validation ---")
 
-    # Build a DOL where data section extends past file end.
+    # build_minimal_dol pads the file to fit whatever sections it is given, so
+    # asking it for an oversized section produces an oversized *file* too. The
+    # case this is about is a header that claims more than the file delivers,
+    # which means validating against a truncated size.
     data = build_minimal_dol(data0_offset=0x2100, data0_size=0xFFFF)
     hdr = parse_dol(data)
 
-    warnings = validate_sections(hdr, file_size=len(data))
+    truncated = len(data) - 0x1000
+    warnings = validate_sections(hdr, file_size=truncated)
     check(len(warnings) > 0, "should warn about out-of-bounds section")
+
+    # And the same header against the real file size must be clean, otherwise
+    # the check above would pass for the wrong reason.
+    check(not validate_sections(hdr, file_size=len(data)),
+          "a section that fits the file should not warn")
 
 
 def test_too_small():
@@ -171,6 +184,31 @@ def test_too_small():
         check(True, "ValueError raised for truncated data")
 
 
+def test_section_overlap_detected():
+    """validate_sections' overlap check was a TODO that no test exercised."""
+    print("--- test_section_overlap_detected ---")
+
+    # text0 loads at 0x80003100 for 0x2000 bytes, so a data section starting
+    # at 0x80004000 lands inside it.
+    data = build_minimal_dol(text0_addr=0x80003100, text0_size=0x2000,
+                             data0_addr=0x80004000, data0_size=0x1000)
+    hdr = parse_dol(data)
+    warnings = validate_sections(hdr, file_size=len(data))
+    check(any("overlap" in w.lower() for w in warnings),
+          "overlapping sections are reported")
+
+
+def test_no_false_overlap():
+    """Sections that merely sit next to each other must not be reported."""
+    print("--- test_no_false_overlap ---")
+
+    data = build_minimal_dol(text0_addr=0x80003000, text0_size=0x1000,
+                             data0_addr=0x80004000, data0_size=0x1000)
+    hdr = parse_dol(data)
+    warnings = validate_sections(hdr, file_size=len(data))
+    check(not any("overlap" in w.lower() for w in warnings),
+          "adjacent sections are accepted")
+
 if __name__ == "__main__":
     print("DOL Parser -- Test Suite\n")
 
@@ -180,6 +218,8 @@ if __name__ == "__main__":
     test_all_sections()
     test_validation()
     test_too_small()
+    test_section_overlap_detected()
+    test_no_false_overlap()
 
     print(f"\n{tests_passed} / {tests_run} tests passed.")
     sys.exit(0 if tests_passed == tests_run else 1)

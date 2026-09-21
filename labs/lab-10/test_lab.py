@@ -234,3 +234,32 @@ class TestCFGProperties(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestUnreachableCode(unittest.TestCase):
+    """detect_unreachable_code was a TODO that no test exercised."""
+
+    def test_all_reachable(self):
+        binary = assemble([(Opcode.NOP, 0), (Opcode.NOP, 0), (Opcode.HALT, 0)])
+        d = RecursiveDescentDisassembler(binary)
+        d.disassemble(0)
+        self.assertEqual(d.detect_unreachable_code(), [])
+
+    def test_trailing_region_found(self):
+        # HALT stops the walk, so everything after it is never visited.
+        binary = assemble([(Opcode.NOP, 0), (Opcode.HALT, 0),
+                           (Opcode.NOP, 0), (Opcode.NOP, 0)])
+        d = RecursiveDescentDisassembler(binary)
+        d.disassemble(0)
+        regions = d.detect_unreachable_code()
+        self.assertTrue(regions, "the two words after HALT are unreachable")
+        start, length = regions[0]
+        self.assertEqual(start, 2 * INSTRUCTION_WIDTH)
+        self.assertEqual(length, 2 * INSTRUCTION_WIDTH)
+
+    def test_regions_are_tuples(self):
+        binary = assemble([(Opcode.HALT, 0), (Opcode.NOP, 0)])
+        d = RecursiveDescentDisassembler(binary)
+        d.disassemble(0)
+        for region in d.detect_unreachable_code():
+            self.assertEqual(len(region), 2)

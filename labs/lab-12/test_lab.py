@@ -105,24 +105,20 @@ class TestLiftADDI(unittest.TestCase):
     def test_addi_not_implemented(self):
         """ADDI should raise NotImplementedError until implemented."""
         instr = MipsInstruction(op=MipsOp.ADDI, rt=3, rs=1, imm=42)
-        try:
-            c = self.lifter.lift(instr)
-            # If implemented, verify correctness
-            self.assertIn("ctx->r[3]", c)
-            self.assertIn("ctx->r[1]", c)
-            self.assertIn("42", c)
-            self.assertIn("+", c)
-        except NotImplementedError:
-            pass  # Expected until implemented
+        c = self.lifter.lift(instr)
+        # If implemented, verify correctness
+        self.assertIn("ctx->r[3]", c)
+        self.assertIn("ctx->r[1]", c)
+        self.assertIn("42", c)
+        self.assertIn("+", c)
+
 
     def test_addi_to_zero_discarded(self):
         """ADDI $0, $1, 5 should be discarded."""
         instr = MipsInstruction(op=MipsOp.ADDI, rt=0, rs=1, imm=5)
-        try:
-            c = self.lifter.lift(instr)
-            self.assertIn("discard", c.lower())
-        except NotImplementedError:
-            pass
+        c = self.lifter.lift(instr)
+        self.assertIn("discard", c.lower())
+
 
 
 class TestLiftSUB(unittest.TestCase):
@@ -133,12 +129,10 @@ class TestLiftSUB(unittest.TestCase):
 
     def test_sub_not_implemented(self):
         instr = MipsInstruction(op=MipsOp.SUB, rd=3, rs=1, rt=2)
-        try:
-            c = self.lifter.lift(instr)
-            self.assertIn("ctx->r[3]", c)
-            self.assertIn("-", c)
-        except NotImplementedError:
-            pass
+        c = self.lifter.lift(instr)
+        self.assertIn("ctx->r[3]", c)
+        self.assertIn("-", c)
+
 
 
 class TestLiftAND(unittest.TestCase):
@@ -149,12 +143,10 @@ class TestLiftAND(unittest.TestCase):
 
     def test_and_not_implemented(self):
         instr = MipsInstruction(op=MipsOp.AND, rd=3, rs=1, rt=2)
-        try:
-            c = self.lifter.lift(instr)
-            self.assertIn("ctx->r[3]", c)
-            self.assertIn("&", c)
-        except NotImplementedError:
-            pass
+        c = self.lifter.lift(instr)
+        self.assertIn("ctx->r[3]", c)
+        self.assertIn("&", c)
+
 
 
 class TestLiftOR(unittest.TestCase):
@@ -165,12 +157,10 @@ class TestLiftOR(unittest.TestCase):
 
     def test_or_not_implemented(self):
         instr = MipsInstruction(op=MipsOp.OR, rd=3, rs=1, rt=2)
-        try:
-            c = self.lifter.lift(instr)
-            self.assertIn("ctx->r[3]", c)
-            self.assertIn("|", c)
-        except NotImplementedError:
-            pass
+        c = self.lifter.lift(instr)
+        self.assertIn("ctx->r[3]", c)
+        self.assertIn("|", c)
+
 
 
 class TestLiftXOR(unittest.TestCase):
@@ -181,12 +171,10 @@ class TestLiftXOR(unittest.TestCase):
 
     def test_xor_not_implemented(self):
         instr = MipsInstruction(op=MipsOp.XOR, rd=3, rs=1, rt=2)
-        try:
-            c = self.lifter.lift(instr)
-            self.assertIn("ctx->r[3]", c)
-            self.assertIn("^", c)
-        except NotImplementedError:
-            pass
+        c = self.lifter.lift(instr)
+        self.assertIn("ctx->r[3]", c)
+        self.assertIn("^", c)
+
 
 
 class TestLiftSW(unittest.TestCase):
@@ -197,14 +185,12 @@ class TestLiftSW(unittest.TestCase):
 
     def test_sw_not_implemented(self):
         instr = MipsInstruction(op=MipsOp.SW, rt=4, rs=5, imm=8)
-        try:
-            c = self.lifter.lift(instr)
-            self.assertIn("ctx->mem", c)
-            self.assertIn("ctx->r[5]", c)
-            self.assertIn("ctx->r[4]", c)
-            self.assertIn("8", c)
-        except NotImplementedError:
-            pass
+        c = self.lifter.lift(instr)
+        self.assertIn("ctx->mem", c)
+        self.assertIn("ctx->r[5]", c)
+        self.assertIn("ctx->r[4]", c)
+        self.assertIn("8", c)
+
 
 
 class TestLiftBEQ(unittest.TestCase):
@@ -215,13 +201,11 @@ class TestLiftBEQ(unittest.TestCase):
 
     def test_beq_not_implemented(self):
         instr = MipsInstruction(op=MipsOp.BEQ, rs=1, rt=2, imm=4, address=0x00400000)
-        try:
-            c = self.lifter.lift(instr)
-            self.assertIn("if", c)
-            self.assertIn("==", c)
-            self.assertIn("goto", c)
-        except NotImplementedError:
-            pass
+        c = self.lifter.lift(instr)
+        self.assertIn("if", c)
+        self.assertIn("==", c)
+        self.assertIn("goto", c)
+
 
 
 class TestUnsupportedInstruction(unittest.TestCase):
@@ -239,8 +223,6 @@ class TestUnsupportedInstruction(unittest.TestCase):
             instr = MipsInstruction(op=op)
             try:
                 lifter.lift(instr)
-            except NotImplementedError:
-                pass  # Fine -- just means it is a TODO instruction
             except ValueError:
                 self.fail(f"Unexpected ValueError for known op {op}")
 

@@ -54,9 +54,7 @@ class TestAddA:
 class TestSubA:
     def test_sub_a_b(self):
         result = sm83_lifter.lift_instruction(0x90)
-        if result is None:
-            # Not yet implemented -- student TODO
-            return
+        assert result is not None, "not implemented -- part of the lab"
         assert "cpu.a" in result
         assert "SET_N(1)" in result
         assert "SET_H_SUB" in result
@@ -66,15 +64,13 @@ class TestSubA:
 class TestIncDec:
     def test_inc_b(self):
         result = sm83_lifter.lift_instruction(0x04)
-        if result is None:
-            return
+        assert result is not None, "not implemented -- part of the lab"
         assert "cpu.b" in result
         assert "SET_Z" in result
 
     def test_dec_b(self):
         result = sm83_lifter.lift_instruction(0x05)
-        if result is None:
-            return
+        assert result is not None, "not implemented -- part of the lab"
         assert "cpu.b" in result
         assert "SET_N(1)" in result
 
@@ -82,22 +78,19 @@ class TestIncDec:
 class TestLogic:
     def test_and_a_b(self):
         result = sm83_lifter.lift_instruction(0xA0)
-        if result is None:
-            return
+        assert result is not None, "not implemented -- part of the lab"
         assert "cpu.a" in result
         assert "&" in result or "and" in result.lower()
 
     def test_xor_a_b(self):
         result = sm83_lifter.lift_instruction(0xA8)
-        if result is None:
-            return
+        assert result is not None, "not implemented -- part of the lab"
         assert "cpu.a" in result
         assert "^" in result or "xor" in result.lower()
 
     def test_or_a_b(self):
         result = sm83_lifter.lift_instruction(0xB0)
-        if result is None:
-            return
+        assert result is not None, "not implemented -- part of the lab"
         assert "cpu.a" in result
         assert "|" in result or "or" in result.lower()
 
@@ -105,8 +98,7 @@ class TestLogic:
 class TestCompare:
     def test_cp_b(self):
         result = sm83_lifter.lift_instruction(0xB8)
-        if result is None:
-            return
+        assert result is not None, "not implemented -- part of the lab"
         # CP should NOT modify A
         assert "cpu.a =" not in result or "cpu.a = cpu.a" not in result
         assert "SET_Z" in result
@@ -140,14 +132,12 @@ class TestJumps:
 class TestPushPop:
     def test_push_bc(self):
         result = sm83_lifter.lift_instruction(0xC5)
-        if result is None:
-            return
+        assert result is not None, "not implemented -- part of the lab"
         assert "cpu.sp" in result
 
     def test_pop_bc(self):
         result = sm83_lifter.lift_instruction(0xC1)
-        if result is None:
-            return
+        assert result is not None, "not implemented -- part of the lab"
         assert "cpu.sp" in result
 
 

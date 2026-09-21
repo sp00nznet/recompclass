@@ -7,7 +7,7 @@
 
 > An open course on static binary recompilation -- the art of translating compiled programs from one platform to another at the source level.
 >
-> Four semesters, 64 modules, 123 labs, 67 with generated reference solutions.
+> Four semesters, 64 modules, 123 labs, 74 with generated reference solutions.
 
 ---
 
@@ -187,7 +187,7 @@ Whether you are a preservationist, a reverse engineer, a systems programmer, or 
 
 4. **Work the labs.** Each lab lives in `labs/lab-NN/`. Fill in the functions marked `TODO` and run `python -m pytest labs/lab-NN` until it is green.
 
-   78 of the 123 labs have tests. 67 of those ship a reference solution in `labs/lab-NN/solution/` -- read it *after* you have your own version working, since the interesting part is usually where the two differ. The remaining 11 tested labs have optional stretch goals beyond what their tests cover, so there is nothing to compare against; the other 45 are written exercises with no code to run.
+   78 of the 123 labs have tests. 74 of those ship a reference solution in `labs/lab-NN/solution/` -- read it *after* you have your own version working, since the interesting part is usually where the two differ. The remaining 4 tested labs have open-ended "go further" prompts rather than a defined contract to implement against; the other 45 are written exercises with no code to run.
 
    Solutions are generated from `tools/make_solutions.py` and CI checks that every one still passes its lab's tests, so they cannot drift away from the stubs they answer.
 
@@ -205,7 +205,7 @@ recompclass/
     tool-setup.md      Environment and toolchain setup
     glossary.md        Terminology reference
     recommended-reading.md  Community resources and papers
-    architecture-reference/  CPU ISA quick references (11 architectures)
+    architecture-reference/  CPU ISA quick references (12 architectures)
     cheat-sheets/      Tool quick references
   units/
     unit-1-foundations/          Modules 1-5
