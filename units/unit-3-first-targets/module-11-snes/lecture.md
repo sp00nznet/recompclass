@@ -284,7 +284,7 @@ Correct a likely assumption first: snesrecomp does **not** contain a 65816 lifte
 is two things, and neither generates code.
 
 **The hardware**, as a linkable library. It does not reimplement the PPU, SPC700, DMA
-or Mode 7 -- it wraps [LakeSnes](https://github.com/sp00nznet/LakeSnes) (MIT) and
+or Mode 7 -- it wraps [LakeSnes](https://github.com/angelo-wf/LakeSnes) by angelo-wf (MIT) and
 exposes it behind `bus_write8(bank, addr, val)`. Its README states the strategy
 directly:
 

@@ -2,7 +2,7 @@
 
 ## Course Overview
 
-This course provides a comprehensive, hands-on introduction to **static recompilation** -- the technique of disassembling a compiled binary, lifting its machine code to portable C, linking against hardware and OS shims, and compiling natively for a modern platform without runtime emulation. Structured across two semesters, students progress from foundational concepts through increasingly complex real-world targets spanning **twelve architectures**. Every module is grounded in working code drawn from the [sp00nznet](https://github.com/sp00nznet) project portfolio and the broader recompilation community, giving students direct exposure to production toolchains and real-world projects. By the end of the course, students will be capable of planning and executing a static recompilation project against an unseen target.
+This course provides a comprehensive, hands-on introduction to **static recompilation** -- the technique of disassembling a compiled binary, lifting its machine code to portable C, linking against hardware and OS shims, and compiling natively for a modern platform without runtime emulation. Structured across four semesters, students progress from foundational concepts through increasingly complex real-world targets spanning **more than a dozen CPU architectures**, and on into production engineering and open research problems. Every module is grounded in working code drawn from the [sp00nznet](https://github.com/sp00nznet) project portfolio and the broader recompilation community, giving students direct exposure to production toolchains and real-world projects. By the end of the course, students will be capable of planning and executing a static recompilation project against an unseen target.
 
 The first semester ramps up slowly -- plenty of time to get comfortable with the tools, the theory, and the mechanical process of lifting before touching a real console. The second semester is where things get serious: 32-bit and 64-bit consoles, multi-processor architectures, GPU translation, and the hardest targets the community has tackled.
 
@@ -465,7 +465,7 @@ flowchart TD
 
 **Key References**
 
-- sp00nznet DOS recomp projects ([fallout1-re](https://github.com/sp00nznet/fallout1-re), [fallout2-re](https://github.com/sp00nznet/fallout2-re))
+- [fallout1-re](https://github.com/alexbatalov/fallout1-re) / [fallout2-re](https://github.com/alexbatalov/fallout2-re) by Alexander Batalov -- DOS-era Fallout *decompilations* (not recompilations, and not sp00nznet's)
 - [pcrecomp](https://github.com/sp00nznet/pcrecomp)
 
 ---
@@ -1332,7 +1332,7 @@ The capstone demonstrates the student's ability to generalize the techniques lea
 
 ## Suggested Pacing
 
-### 32-Week Schedule (Two Semesters)
+### 32-Week Schedule (Semesters 1-2)
 
 #### Semester 1: Foundations and First Targets (Weeks 1-16)
 
@@ -1379,6 +1379,14 @@ The capstone demonstrates the student's ability to generalize the techniques lea
 Start thinking about your capstone project around Week 24. You will want several weeks to plan and work on it alongside the later modules.
 
 ### Self-Paced
+
+#### Semesters 3-4: Production Engineering and Research (Weeks 33-64)
+
+Modules 33-64 are deliberately not scheduled week-by-week. Semester 3 is
+engineering work that takes as long as your own project takes, and Semester 4 is
+research: several of its labs are "contribute something upstream", "measure an
+open problem" or "write it up", which do not fit a fixed week. One module per
+week remains a reasonable default if you want one.
 
 Work through modules in dependency order (see the flowchart above). A reasonable pace is **one module per week**, but there is no penalty for going faster or slower. The Semester 2 console modules (20-25) are independent of each other and can be tackled in any order or in parallel once the pipeline modules (17-19) are complete.
 

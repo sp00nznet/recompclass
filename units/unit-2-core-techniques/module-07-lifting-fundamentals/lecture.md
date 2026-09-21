@@ -1681,7 +1681,7 @@ live in a header that is tested once and reused by every project.
 
 **A hardware runtime.** The other half is the SNES itself: PPU, SPC700 audio, DMA,
 Mode 7. It does not reimplement any of that. It links
-[LakeSnes](https://github.com/sp00nznet/LakeSnes) (MIT) and exposes it behind
+[LakeSnes](https://github.com/angelo-wf/LakeSnes) by angelo-wf (MIT) and exposes it behind
 `bus_write8(bank, addr, val)`.
 
 The README states the strategy in one line, and it is one of the load-bearing ideas

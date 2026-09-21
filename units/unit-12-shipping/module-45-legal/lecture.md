@@ -75,8 +75,9 @@ of the corpus use MIT.
 Where it gets interesting is **what you linked**.
 
 Module 11's `snesrecomp` does not reimplement the SNES — it wraps
-[LakeSnes](https://github.com/sp00nznet/LakeSnes), and the README is specific that LakeSnes
-is **MIT licensed**. That is not incidental detail; it is why the wrapping is possible
+[LakeSnes](https://github.com/angelo-wf/LakeSnes) by angelo-wf (the course creator's
+copy is a [fork](https://github.com/sp00nznet/LakeSnes)), and the README is specific
+that LakeSnes is **MIT licensed**. That is not incidental detail; it is why the wrapping is possible
 under a permissive licence at all. Had the chosen emulator been GPL, `snesrecomp` and
 everything linking it would have to be GPL too.
 

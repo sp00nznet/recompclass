@@ -285,7 +285,7 @@ Grouped by what makes each one instructive:
 | DOS / Win16 / Win32 | x86 | [pcrecomp](https://github.com/sp00nznet/pcrecomp) |
 | GameCube / Wii | PowerPC Gekko / Broadway | [gcrecomp](https://github.com/sp00nznet/gcrecomp) |
 | Dreamcast / Naomi | SH-4 | [dcrecomp](https://github.com/sp00nznet/dcrecomp) |
-| PlayStation 2 | MIPS R5900 | [PS2Recomp](https://github.com/sp00nznet/PS2Recomp) |
+| PlayStation 2 | MIPS R5900 | [PS2Recomp](https://github.com/sp00nznet/PS2Recomp) (a fork of [ran-j/PS2Recomp](https://github.com/ran-j/PS2Recomp), above, via [jlsandri](https://github.com/jlsandri/PS2Recomp)) |
 | Xbox | x86-32 | [xboxrecomp](https://github.com/sp00nznet/xboxrecomp) |
 | PlayStation 3 | Cell PPE + SPU | [ps3recomp](https://github.com/sp00nznet/ps3recomp) |
 
@@ -388,22 +388,62 @@ This course takes you from first principles to advanced topics, building real st
 
 ```mermaid
 flowchart TD
-    A["Unit 1: Foundations\nBinary formats, assembly basics,\nC code generation patterns"] --> B["Unit 2: Game Boy (SM83)\nYour first complete recompiler\n8-bit, simple memory map"]
-    B --> C["Unit 3: SNES (65816)\nBank switching, 16-bit extensions,\nDMA and co-processors"]
-    C --> D["Unit 4: N64 (MIPS R4300i)\n32-bit RISC, delay slots,\nRDP graphics translation"]
-    D --> E["Unit 5: GameCube (PowerPC/Gekko)\n32-bit PowerPC, paired singles,\nGX graphics pipeline"]
-    E --> F["Unit 6: Xbox 360 (Xenon)\nMulticore PowerPC, VMX128,\nD3D9 graphics translation"]
-    F --> G["Unit 7: PS3 (Cell BE)\nHeterogeneous PPU + 6 SPUs,\nDMA-based memory, RSX graphics"]
-    G --> H["Unit 8: Capstone\nAdvanced topics, tooling,\nbuilding your own recomp pipeline"]
+    subgraph S1["Semester 1 — Foundations and First Targets"]
+        direction TB
+        U1["Unit 1 · Modules 1-5<br/>Foundations<br/><i>binary formats, CPU architectures,<br/>reading assembly, Ghidra and Capstone</i>"]
+        U2["Unit 2 · Modules 6-8<br/>Core Techniques<br/><i>control-flow recovery, instruction lifting,<br/>your first hand-lift</i>"]
+        U3["Unit 3 · Modules 9-13<br/>First Targets<br/><i>Game Boy, NES, SNES, GBA, DOS</i>"]
+        U4["Unit 4 · Modules 14-16<br/>Pipeline Essentials<br/><i>indirect calls, hardware shims,<br/>mini-project</i>"]
+        U1 --> U2 --> U3 --> U4
+    end
 
-    style A fill:#4a5568,stroke:#718096,color:#fff
-    style B fill:#2f855a,stroke:#38a169,color:#fff
-    style C fill:#2b6cb0,stroke:#3182ce,color:#fff
-    style D fill:#2b6cb0,stroke:#3182ce,color:#fff
-    style E fill:#975a16,stroke:#b7791f,color:#fff
-    style F fill:#9b2c2c,stroke:#c53030,color:#fff
-    style G fill:#6b21a8,stroke:#7c3aed,color:#fff
-    style H fill:#2d3748,stroke:#4a5568,color:#fff
+    subgraph S2["Semester 2 — Console Architectures and Beyond"]
+        direction TB
+        U5["Unit 5 · Modules 17-19<br/>Pipeline Mastery<br/><i>build systems, testing, optimization</i>"]
+        U6["Unit 6 · Modules 20-25<br/>Console Architectures<br/><i>N64, GameCube, Wii, Dreamcast, PS2, Saturn</i>"]
+        U7["Unit 7 · Modules 26-29<br/>Advanced Targets<br/><i>Xbox, Xbox 360, GPU pipeline translation</i>"]
+        U8["Unit 8 · Modules 30-32<br/>Extreme Targets<br/><i>PS3 / Cell, multi-threaded recomp, capstone</i>"]
+        U5 --> U6 --> U7 --> U8
+    end
+
+    subgraph S3["Semester 3 — Production Engineering"]
+        direction TB
+        U9["Unit 9 · Modules 33-36<br/>Automated Pipelines"]
+        U10["Unit 10 · Modules 37-40<br/>Quality and Correctness<br/><i>the ladder of evidence, differential testing</i>"]
+        U11["Unit 11 · Modules 41-44<br/>Performance"]
+        U12["Unit 12 · Modules 45-48<br/>Shipping and Distribution"]
+        U9 --> U10 --> U11 --> U12
+    end
+
+    subgraph S4["Semester 4 — Frontiers and Research"]
+        direction TB
+        U13["Unit 13 · Modules 49-52<br/>Hybrid Techniques"]
+        U14["Unit 14 · Modules 53-56<br/>Emerging Architectures<br/><i>4-bit CPUs, bytecode VMs, undocumented hardware</i>"]
+        U15["Unit 15 · Modules 57-60<br/>Tooling Contributions"]
+        U16["Unit 16 · Modules 61-64<br/>Research and Capstone"]
+        U13 --> U14 --> U15 --> U16
+    end
+
+    U4 --> U5
+    U8 --> U9
+    U12 --> U13
+
+    style U1 fill:#4a5568,stroke:#718096,color:#fff
+    style U2 fill:#4a5568,stroke:#718096,color:#fff
+    style U3 fill:#2f855a,stroke:#38a169,color:#fff
+    style U4 fill:#2f855a,stroke:#38a169,color:#fff
+    style U5 fill:#2b6cb0,stroke:#3182ce,color:#fff
+    style U6 fill:#2b6cb0,stroke:#3182ce,color:#fff
+    style U7 fill:#975a16,stroke:#b7791f,color:#fff
+    style U8 fill:#9b2c2c,stroke:#c53030,color:#fff
+    style U9 fill:#285e61,stroke:#319795,color:#fff
+    style U10 fill:#285e61,stroke:#319795,color:#fff
+    style U11 fill:#285e61,stroke:#319795,color:#fff
+    style U12 fill:#285e61,stroke:#319795,color:#fff
+    style U13 fill:#6b21a8,stroke:#7c3aed,color:#fff
+    style U14 fill:#6b21a8,stroke:#7c3aed,color:#fff
+    style U15 fill:#6b21a8,stroke:#7c3aed,color:#fff
+    style U16 fill:#2d3748,stroke:#4a5568,color:#fff
 ```
 
 Each unit builds on the last. By the end, you will understand not just how to use static recompilation tools, but how to build them -- and how to extend them to new architectures you encounter in the future.

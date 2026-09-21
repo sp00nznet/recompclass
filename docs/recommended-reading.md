@@ -195,7 +195,7 @@ GameCube game static recompilation.
 **burnout3** -- [github.com/sp00nznet/burnout3](https://github.com/sp00nznet/burnout3)
 Burnout 3: Takedown (Xbox → Windows x86-64).
 
-**fallout1-re** / **fallout2-re** -- [github.com/sp00nznet/fallout1-re](https://github.com/sp00nznet/fallout1-re), [github.com/sp00nznet/fallout2-re](https://github.com/sp00nznet/fallout2-re)
-DOS-era Fallout reverse engineering and recompilation projects.
+**fallout1-re** / **fallout2-re** -- by **Alexander Batalov**: [alexbatalov/fallout1-re](https://github.com/alexbatalov/fallout1-re), [alexbatalov/fallout2-re](https://github.com/alexbatalov/fallout2-re)
+Full reverse engineering of the original Fallout and Fallout 2 into buildable C++. Not recompilation projects and not sp00nznet's -- they are decompilations, and a useful contrast: where a recompiler translates machine code mechanically, these recover source a human can read and modify.
 
 These repositories illustrate different design decisions and tradeoffs across a range of guest architectures. Studying how each one handles binary loading, disassembly, control flow analysis, and code generation will reinforce the concepts taught in the course.
