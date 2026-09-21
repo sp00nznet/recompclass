@@ -60,7 +60,7 @@ Underrated, and the only shape that actually tests generality (Module 58 §2).
 **Done when:** you pick a rung on Module 37's ladder and reach it.
 **Measure:** the rung, honestly.
 
-`LinksAwakening` (playable), `wormsrevolution` (playable), `mk` (playable),
+`LinksAwakening` (playable), `wormsrevolution` (playable, no text), `mk` (playable),
 `burnout3`, `civrev`, `flow`, `tokyojungle`, `crazytaxi`, `xwa`.
 
 The shape with the most ways to overclaim, which is why Modules 27, 30 and 37 spend so long

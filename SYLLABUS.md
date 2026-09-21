@@ -854,7 +854,7 @@ flowchart TD
 
 - [XenonRecomp](https://github.com/hedge-dev/XenonRecomp)
 - [ReXGlue SDK](https://github.com/rexglue/rexglue-sdk)
-- [wormsrevolution](https://github.com/sp00nznet/wormsrevolution) -- playable bring-up
+- [wormsrevolution](https://github.com/sp00nznet/wormsrevolution) -- playable bring-up, with text and UI not rendering (a runtime GPU gap, not missing code)
 - [ydkj](https://github.com/sp00nznet/ydkj), [civrev](https://github.com/sp00nznet/civrev), [outrun](https://github.com/sp00nznet/outrun) -- bring-ups at three different stages
 
 ---

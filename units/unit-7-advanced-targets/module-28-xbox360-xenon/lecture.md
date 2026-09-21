@@ -322,9 +322,9 @@ Every project below is public, and each README carries an **Honest scope** secti
 saying exactly how far it actually got. Read them in that spirit -- these are
 bring-ups in progress, not finished ports, and the interesting material is in the gaps.
 
-### [Worms Revolution](https://github.com/sp00nznet/wormsrevolution) -- playable
+### [Worms Revolution](https://github.com/sp00nznet/wormsrevolution) -- playable, without text
 
-Team17, 2012, GoD package. The one that actually plays: intro logos, full-motion video
+Team17, 2012, GoD package. The one that actually plays -- with a caveat that matters, below: intro logos, full-motion video
 decoding natively, animated title screen, and the tutorial playable end to end with
 worms, terrain, weapons, physics, camera and input all working.
 
