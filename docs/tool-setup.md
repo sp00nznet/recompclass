@@ -2,6 +2,8 @@
 
 This guide covers everything you need installed and configured before starting the labs. The course targets a workflow where you write recompiler tooling in Python and compile generated C code with a standard C compiler.
 
+For which recompilation toolchain to use on a given machine, see the [Toolchain Matrix](toolchain-matrix.md).
+
 ---
 
 ## Required Tools
