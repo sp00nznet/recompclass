@@ -197,6 +197,8 @@ standing position, the right thing regardless.
 - [ ] Licence is compatible with everything linked, and notices are preserved
 - [ ] Lineage is credited by name
 
+For how today's real toolkits compare per machine and how mature each is, see the [Toolchain Matrix](../../../docs/toolchain-matrix.md).
+
 ---
 
 ## Labs

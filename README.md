@@ -181,7 +181,7 @@ Whether you are a preservationist, a reverse engineer, a systems programmer, or 
 
 1. **Read the syllabus.** The [SYLLABUS.md](SYLLABUS.md) contains the full course roadmap, learning objectives, module dependencies, and lab assignments.
 
-2. **Set up your tools.** Follow the [Tool Setup Guide](docs/tool-setup.md) to install the disassemblers, compilers, and recompilation toolchains used throughout the course.
+2. **Set up your tools.** Follow the [Tool Setup Guide](docs/tool-setup.md) to install the disassemblers, compilers, and recompilation toolchains used throughout the course. To pick a real-world toolchain for a given machine and goal, see the [Toolchain Matrix](docs/toolchain-matrix.md).
 
 3. **Start with Module 1.** Work through the units in order -- each module builds on the one before it. No rush. The first 8 modules are all foundations and theory before you recompile anything.
 
@@ -203,6 +203,7 @@ recompclass/
   LICENSE              MIT License
   docs/
     tool-setup.md      Environment and toolchain setup
+    toolchain-matrix.md  Which toolchain for which machine and goal
     glossary.md        Terminology reference
     recommended-reading.md  Community resources and papers
     architecture-reference/  CPU ISA quick references (12 architectures)
